@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CreatorsRouteImport } from './routes/creators'
 import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
@@ -21,6 +23,15 @@ import { Route as PhotosEventRouteImport } from './routes/photos.event'
 import { Route as PhotosFaceRouteImport } from './routes/photos.face'
 import { Route as PhotosPhoneRouteImport } from './routes/photos.phone'
 import { Route as PhotosQrRouteImport } from './routes/photos.qr'
+import { Route as PortalIndexRouteImport } from './routes/portal.index'
+import { Route as PortalEventsRouteImport } from './routes/portal.events'
+import { Route as PortalPhotographersRouteImport } from './routes/portal.photographers'
+import { Route as PortalRequestsRouteImport } from './routes/portal.requests'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as PortalPhotographersIndexRouteImport } from './routes/portal.photographers.index'
+import { Route as PortalPhotographersIdRouteImport } from './routes/portal.photographers.$id'
+import { Route as PortalRequestsIndexRouteImport } from './routes/portal.requests.index'
+import { Route as PortalRequestsIdRouteImport } from './routes/portal.requests.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +51,16 @@ const CreatorsRoute = CreatorsRouteImport.update({
 const ExploreRoute = ExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -82,34 +103,99 @@ const PhotosQrRoute = PhotosQrRouteImport.update({
   path: '/photos/qr',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalEventsRoute = PortalEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalPhotographersRoute = PortalPhotographersRouteImport.update({
+  id: '/photographers',
+  path: '/photographers',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalRequestsRoute = PortalRequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
+  getParentRoute: () => PortalRoute,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalPhotographersIndexRoute =
+  PortalPhotographersIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => PortalPhotographersRoute,
+  } as any)
+const PortalPhotographersIdRoute = PortalPhotographersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => PortalPhotographersRoute,
+} as any)
+const PortalRequestsIndexRoute = PortalRequestsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalRequestsRoute,
+} as any)
+const PortalRequestsIdRoute = PortalRequestsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => PortalRequestsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
   '/creators': typeof CreatorsRoute
   '/explore': typeof ExploreRoute
+  '/login': typeof LoginRoute
+  '/portal': typeof PortalRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/events/$slug': typeof EventsSlugRoute
   '/photos/event': typeof PhotosEventRoute
   '/photos/face': typeof PhotosFaceRoute
   '/photos/phone': typeof PhotosPhoneRoute
   '/photos/qr': typeof PhotosQrRoute
+  '/portal/events': typeof PortalEventsRoute
+  '/portal/photographers': typeof PortalPhotographersRouteWithChildren
+  '/portal/requests': typeof PortalRequestsRouteWithChildren
   '/events/': typeof EventsIndexRoute
   '/photos/': typeof PhotosIndexRoute
+  '/portal/': typeof PortalIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/portal/photographers/$id': typeof PortalPhotographersIdRoute
+  '/portal/requests/$id': typeof PortalRequestsIdRoute
+  '/portal/photographers/': typeof PortalPhotographersIndexRoute
+  '/portal/requests/': typeof PortalRequestsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
   '/creators': typeof CreatorsRoute
   '/explore': typeof ExploreRoute
+  '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/events/$slug': typeof EventsSlugRoute
   '/photos/event': typeof PhotosEventRoute
   '/photos/face': typeof PhotosFaceRoute
   '/photos/phone': typeof PhotosPhoneRoute
   '/photos/qr': typeof PhotosQrRoute
+  '/portal/events': typeof PortalEventsRoute
   '/events': typeof EventsIndexRoute
   '/photos': typeof PhotosIndexRoute
+  '/portal': typeof PortalIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/portal/photographers/$id': typeof PortalPhotographersIdRoute
+  '/portal/requests/$id': typeof PortalRequestsIdRoute
+  '/portal/photographers': typeof PortalPhotographersIndexRoute
+  '/portal/requests': typeof PortalRequestsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -117,14 +203,25 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/creators': typeof CreatorsRoute
   '/explore': typeof ExploreRoute
+  '/login': typeof LoginRoute
+  '/portal': typeof PortalRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/events/$slug': typeof EventsSlugRoute
   '/photos/event': typeof PhotosEventRoute
   '/photos/face': typeof PhotosFaceRoute
   '/photos/phone': typeof PhotosPhoneRoute
   '/photos/qr': typeof PhotosQrRoute
+  '/portal/events': typeof PortalEventsRoute
+  '/portal/photographers': typeof PortalPhotographersRouteWithChildren
+  '/portal/requests': typeof PortalRequestsRouteWithChildren
   '/events/': typeof EventsIndexRoute
   '/photos/': typeof PhotosIndexRoute
+  '/portal/': typeof PortalIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/portal/photographers/$id': typeof PortalPhotographersIdRoute
+  '/portal/requests/$id': typeof PortalRequestsIdRoute
+  '/portal/photographers/': typeof PortalPhotographersIndexRoute
+  '/portal/requests/': typeof PortalRequestsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -133,42 +230,72 @@ export interface FileRouteTypes {
     | '/contact'
     | '/creators'
     | '/explore'
+    | '/login'
+    | '/portal'
     | '/privacy'
     | '/events/$slug'
     | '/photos/event'
     | '/photos/face'
     | '/photos/phone'
     | '/photos/qr'
+    | '/portal/events'
+    | '/portal/photographers'
+    | '/portal/requests'
     | '/events/'
     | '/photos/'
+    | '/portal/'
+    | '/api/auth/$'
+    | '/portal/photographers/$id'
+    | '/portal/requests/$id'
+    | '/portal/photographers/'
+    | '/portal/requests/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/contact'
     | '/creators'
     | '/explore'
+    | '/login'
     | '/privacy'
     | '/events/$slug'
     | '/photos/event'
     | '/photos/face'
     | '/photos/phone'
     | '/photos/qr'
+    | '/portal/events'
     | '/events'
     | '/photos'
+    | '/portal'
+    | '/api/auth/$'
+    | '/portal/photographers/$id'
+    | '/portal/requests/$id'
+    | '/portal/photographers'
+    | '/portal/requests'
   id:
     | '__root__'
     | '/'
     | '/contact'
     | '/creators'
     | '/explore'
+    | '/login'
+    | '/portal'
     | '/privacy'
     | '/events/$slug'
     | '/photos/event'
     | '/photos/face'
     | '/photos/phone'
     | '/photos/qr'
+    | '/portal/events'
+    | '/portal/photographers'
+    | '/portal/requests'
     | '/events/'
     | '/photos/'
+    | '/portal/'
+    | '/api/auth/$'
+    | '/portal/photographers/$id'
+    | '/portal/requests/$id'
+    | '/portal/photographers/'
+    | '/portal/requests/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -176,6 +303,8 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   CreatorsRoute: typeof CreatorsRoute
   ExploreRoute: typeof ExploreRoute
+  LoginRoute: typeof LoginRoute
+  PortalRoute: typeof PortalRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   EventsSlugRoute: typeof EventsSlugRoute
   PhotosEventRoute: typeof PhotosEventRoute
@@ -184,6 +313,7 @@ export interface RootRouteChildren {
   PhotosQrRoute: typeof PhotosQrRoute
   EventsIndexRoute: typeof EventsIndexRoute
   PhotosIndexRoute: typeof PhotosIndexRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -214,6 +344,20 @@ declare module '@tanstack/react-router' {
       path: '/explore'
       fullPath: '/explore'
       preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -272,14 +416,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PhotosQrRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/': {
+      id: '/portal/'
+      path: '/'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/events': {
+      id: '/portal/events'
+      path: '/events'
+      fullPath: '/portal/events'
+      preLoaderRoute: typeof PortalEventsRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/photographers': {
+      id: '/portal/photographers'
+      path: '/photographers'
+      fullPath: '/portal/photographers'
+      preLoaderRoute: typeof PortalPhotographersRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/requests': {
+      id: '/portal/requests'
+      path: '/requests'
+      fullPath: '/portal/requests'
+      preLoaderRoute: typeof PortalRequestsRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/photographers/': {
+      id: '/portal/photographers/'
+      path: '/'
+      fullPath: '/portal/photographers/'
+      preLoaderRoute: typeof PortalPhotographersIndexRouteImport
+      parentRoute: typeof PortalPhotographersRoute
+    }
+    '/portal/photographers/$id': {
+      id: '/portal/photographers/$id'
+      path: '/$id'
+      fullPath: '/portal/photographers/$id'
+      preLoaderRoute: typeof PortalPhotographersIdRouteImport
+      parentRoute: typeof PortalPhotographersRoute
+    }
+    '/portal/requests/': {
+      id: '/portal/requests/'
+      path: '/'
+      fullPath: '/portal/requests/'
+      preLoaderRoute: typeof PortalRequestsIndexRouteImport
+      parentRoute: typeof PortalRequestsRoute
+    }
+    '/portal/requests/$id': {
+      id: '/portal/requests/$id'
+      path: '/$id'
+      fullPath: '/portal/requests/$id'
+      preLoaderRoute: typeof PortalRequestsIdRouteImport
+      parentRoute: typeof PortalRequestsRoute
+    }
   }
 }
+
+interface PortalPhotographersRouteChildren {
+  PortalPhotographersIdRoute: typeof PortalPhotographersIdRoute
+  PortalPhotographersIndexRoute: typeof PortalPhotographersIndexRoute
+}
+
+const PortalPhotographersRouteChildren: PortalPhotographersRouteChildren = {
+  PortalPhotographersIdRoute: PortalPhotographersIdRoute,
+  PortalPhotographersIndexRoute: PortalPhotographersIndexRoute,
+}
+
+const PortalPhotographersRouteWithChildren =
+  PortalPhotographersRoute._addFileChildren(PortalPhotographersRouteChildren)
+
+interface PortalRequestsRouteChildren {
+  PortalRequestsIdRoute: typeof PortalRequestsIdRoute
+  PortalRequestsIndexRoute: typeof PortalRequestsIndexRoute
+}
+
+const PortalRequestsRouteChildren: PortalRequestsRouteChildren = {
+  PortalRequestsIdRoute: PortalRequestsIdRoute,
+  PortalRequestsIndexRoute: PortalRequestsIndexRoute,
+}
+
+const PortalRequestsRouteWithChildren = PortalRequestsRoute._addFileChildren(
+  PortalRequestsRouteChildren,
+)
+
+interface PortalRouteChildren {
+  PortalEventsRoute: typeof PortalEventsRoute
+  PortalPhotographersRoute: typeof PortalPhotographersRouteWithChildren
+  PortalRequestsRoute: typeof PortalRequestsRouteWithChildren
+  PortalIndexRoute: typeof PortalIndexRoute
+}
+
+const PortalRouteChildren: PortalRouteChildren = {
+  PortalEventsRoute: PortalEventsRoute,
+  PortalPhotographersRoute: PortalPhotographersRouteWithChildren,
+  PortalRequestsRoute: PortalRequestsRouteWithChildren,
+  PortalIndexRoute: PortalIndexRoute,
+}
+
+const PortalRouteWithChildren =
+  PortalRoute._addFileChildren(PortalRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ContactRoute: ContactRoute,
   CreatorsRoute: CreatorsRoute,
   ExploreRoute: ExploreRoute,
+  LoginRoute: LoginRoute,
+  PortalRoute: PortalRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   EventsSlugRoute: EventsSlugRoute,
   PhotosEventRoute: PhotosEventRoute,
@@ -288,6 +541,7 @@ const rootRouteChildren: RootRouteChildren = {
   PhotosQrRoute: PhotosQrRoute,
   EventsIndexRoute: EventsIndexRoute,
   PhotosIndexRoute: PhotosIndexRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

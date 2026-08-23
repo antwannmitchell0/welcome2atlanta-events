@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Camera, RotateCcw, ScanFace, Shield, Upload } from "lucide-react";
+import { ArrowRight, Camera, RotateCcw, ScanFace, Shield, Upload } from "lucide-react";
+import { PhotosHeader } from "@/components/photos-header";
 import { events } from "@/lib/events";
 import {
   captureFrame,
@@ -77,7 +78,9 @@ function FaceSearch() {
       const face = await detectLiveFace(video);
       if (face && ctx) {
         const { box } = face;
-        ctx.strokeStyle = isFaceInGuide(box, video) ? "#cfc6b0" : "#9a9588";
+        ctx.strokeStyle = isFaceInGuide(box, video)
+          ? getComputedStyle(document.documentElement).getPropertyValue("--color-gold").trim() || "#d4af37"
+          : getComputedStyle(document.documentElement).getPropertyValue("--color-subtle").trim() || "#6e6e6e";
         ctx.lineWidth = 4;
         ctx.strokeRect(box.x, box.y, box.width, box.height);
         if (isFaceInGuide(box, video)) {
@@ -183,28 +186,19 @@ function FaceSearch() {
 
   return (
     <div className="min-h-screen bg-bg text-fg">
-      <header className="border-b border-border">
-        <div className="mx-auto flex h-16 max-w-md items-center justify-between px-5">
-          <Link to="/photos" className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
-            <ArrowLeft className="size-4" />
-            Back
-          </Link>
-          <span className="text-sm text-accent">Face Scan</span>
-          <span className="w-12" />
-        </div>
-      </header>
+      <PhotosHeader title="Face scan" />
 
       <main className="mx-auto max-w-md px-5 py-10">
         <div className="text-center">
-          <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-xl bg-surface">
-            <ScanFace className="size-7 text-accent" />
+          <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-md bg-surface">
+            <ScanFace className="size-7 text-gold" />
           </div>
-          <h1 className="font-display text-3xl text-fg">Scan your face</h1>
+          <h1 className="font-hero text-4xl text-fg">SCAN YOUR FACE</h1>
           <p className="mt-3 text-muted">{hint}</p>
         </div>
 
         {phase === "camera" ? (
-          <div className="relative mx-auto mt-8 aspect-square overflow-hidden rounded-xl border border-border bg-elevated">
+          <div className="relative mx-auto mt-8 aspect-square overflow-hidden rounded-md border border-border bg-elevated">
             <video
               ref={videoRef}
               className="h-full w-full -scale-x-100 object-cover"
@@ -213,26 +207,26 @@ function FaceSearch() {
               autoPlay
             />
             <canvas ref={overlayRef} className="pointer-events-none absolute inset-0 h-full w-full -scale-x-100" />
-            <div className="pointer-events-none absolute inset-[12%] rounded-full border-2 border-accent/80" />
+            <div className="pointer-events-none absolute inset-[12%] rounded-full border-2 border-gold/80" />
           </div>
         ) : preview ? (
           <img
             src={preview}
             alt="Captured face"
-            className="mx-auto mt-8 aspect-square w-full rounded-xl object-cover"
+            className="mx-auto mt-8 aspect-square w-full rounded-md object-cover"
           />
         ) : (
-          <div className="mx-auto mt-8 flex aspect-square items-center justify-center rounded-xl border border-dashed border-border bg-surface">
-            <Camera className="size-10 text-accent" />
+          <div className="mx-auto mt-8 flex aspect-square items-center justify-center rounded-md border border-dashed border-border bg-surface">
+            <Camera className="size-10 text-gold" />
           </div>
         )}
 
         {error ? <p className="mt-4 text-center text-sm text-live">{error}</p> : null}
 
         {phase === "ready" ? (
-          <aside className="mt-6 rounded-xl border border-border bg-surface p-4 text-left">
+          <aside className="mt-6 rounded-md border border-border bg-surface p-4 text-left">
             <div className="flex items-start gap-3">
-              <Shield className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" />
+              <Shield className="mt-0.5 size-4 shrink-0 text-gold" aria-hidden="true" />
               <div>
                 <p className="text-sm font-medium text-fg">Privacy disclaimer</p>
                 <p className="mt-1 text-sm leading-relaxed text-muted">
@@ -240,7 +234,7 @@ function FaceSearch() {
                   image is used only to search this session’s galleries, then discarded. Optional — you can find
                   photos by event, phone, or code instead.
                 </p>
-                <Link to="/privacy" className="mt-2 inline-block text-sm text-accent hover:text-fg">
+                <Link to="/privacy" className="mt-2 inline-block text-sm text-gold hover:text-fg">
                   Read full privacy policy
                 </Link>
               </div>
@@ -254,7 +248,7 @@ function FaceSearch() {
               <button
                 type="button"
                 onClick={() => void startCamera()}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent font-semibold text-accent-fg"
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gold font-semibold text-gold-fg"
               >
                 <ScanFace className="size-4" />
                 Open camera
@@ -282,7 +276,7 @@ function FaceSearch() {
                 type="button"
                 disabled={!locked}
                 onClick={() => void capture()}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent font-semibold text-accent-fg disabled:opacity-40"
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gold font-semibold text-gold-fg disabled:opacity-40"
               >
                 Capture
               </button>
@@ -311,12 +305,12 @@ function FaceSearch() {
         {phase === "results" ? (
           <div className="mt-8 space-y-3">
             {matches.length === 0 ? (
-              <div className="rounded-xl border border-border bg-surface p-5 text-center">
+              <div className="rounded-md border border-border bg-surface p-5 text-center">
                 <p className="text-fg">No confirmed matches in the live galleries.</p>
                 <p className="mt-2 text-sm text-muted">
                   If you were at the event, photos may still be uploading. Try another scan with more light.
                 </p>
-                <Link to="/explore" className="mt-4 inline-flex items-center gap-1 text-sm text-accent">
+                <Link to="/explore" className="mt-4 inline-flex items-center gap-1 text-sm text-gold">
                   Browse events
                   <ArrowRight className="size-4" />
                 </Link>
@@ -327,11 +321,11 @@ function FaceSearch() {
                   key={`${match.eventSlug}-${match.image}`}
                   to="/events/$slug"
                   params={{ slug: match.eventSlug }}
-                  className="flex gap-3 overflow-hidden rounded-xl border border-border bg-surface hover:border-accent/40"
+                  className="flex gap-3 overflow-hidden rounded-md border border-border bg-surface hover:border-gold/40"
                 >
                   <img src={match.image} alt="" className="h-24 w-20 object-cover" />
                   <div className="flex flex-1 flex-col justify-center py-3 pr-4">
-                    <p className="text-xs text-accent">{match.score}% match</p>
+                    <p className="text-xs text-gold">{match.score}% match</p>
                     <p className="font-medium">{match.eventTitle}</p>
                     <p className="text-sm text-muted">Open gallery</p>
                   </div>
@@ -343,7 +337,7 @@ function FaceSearch() {
 
         <p className="mt-8 text-center text-xs leading-relaxed text-subtle">
           By scanning or uploading, you agree this face check is optional, on-device, and not stored.{" "}
-          <Link to="/privacy" className="text-accent hover:text-fg">
+          <Link to="/privacy" className="text-gold hover:text-fg">
             Privacy policy
           </Link>
         </p>

@@ -1,145 +1,193 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Camera, ScanFace } from "lucide-react";
 import { EventCard } from "@/components/event-card";
 import { HighlightReel } from "@/components/highlight-reel";
+import { LiveBadge } from "@/components/live-badge";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { events } from "@/lib/events";
+import { categoriesInUse, categoryArt, liveEvents, weekendEvents } from "@/lib/events";
 import { neighborhoods } from "@/lib/reel";
 
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
+  const live = liveEvents();
+  const weekend = weekendEvents();
+  const categories = categoriesInUse();
+
   return (
     <div className="min-h-screen bg-bg text-fg">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "Welcome To Atlanta Events",
+            alternateName: "WTAE",
+            email: "hello@welcome2atlantaevents.com",
+            description: "Atlanta event discovery and event photography.",
+          }),
+        }}
+      />
       <SiteHeader />
 
       <section className="relative overflow-hidden">
         <img
           src="/reel/skyline.jpg"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover opacity-35"
+          alt="Atlanta skyline at night"
+          className="absolute inset-0 h-full w-full object-cover opacity-40"
         />
-        <div className="absolute inset-0 bg-bg/70" />
-        <div className="relative mx-auto max-w-6xl px-5 pb-20 pt-16 text-center md:pt-24">
-          <p className="mb-5 text-xs tracking-[0.28em] text-accent">WELCOME TO ATLANTA</p>
-          <h1 className="font-display text-4xl leading-[1.08] tracking-tight text-fg md:text-6xl lg:text-7xl">
-            This is The A.
-            <br />
-            <span className="text-accent">Now find yourself in it.</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted md:text-lg">
-            Cookouts. BeltLine sunsets. Midtown after-hours. The Fourth Ward. If you were in the city, the photos are here.
+        <div className="absolute inset-0 bg-linear-to-b from-bg/40 via-bg/70 to-bg" />
+        <div className="relative mx-auto max-w-6xl px-5 pb-20 pt-16 md:pt-24">
+          <p className="mb-4 inline-flex items-center gap-3 rounded-sm border border-border bg-bg/60 px-3 py-1.5">
+            <LiveBadge />
+            <span className="text-xs uppercase tracking-[0.2em] text-muted">Atlanta is in session</span>
           </p>
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <h1 className="font-hero text-6xl text-fg sm:text-8xl md:text-9xl">
+            ATLANTA
+            <br />
+            <span className="text-gold">IS HAPPENING.</span>
+          </h1>
+          <p className="mt-6 max-w-lg text-base text-muted md:text-lg">
+            Discover the city. Find the moment. Be part of Atlanta.
+          </p>
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row">
             <Link
-              to="/photos"
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-accent px-7 text-sm font-semibold text-accent-fg"
+              to="/explore"
+              className="inline-flex h-12 items-center justify-center rounded-full bg-gold px-7 text-sm font-semibold text-gold-fg"
+              data-track="hero-explore"
             >
-              <Camera className="size-4" />
-              Find my photos
+              Explore Events
             </Link>
             <Link
-              to="/photos/face"
-              className="inline-flex h-12 items-center gap-2 rounded-full border border-border bg-surface px-7 text-sm font-medium text-fg"
+              to="/events"
+              className="inline-flex h-12 items-center justify-center rounded-full border border-border bg-bg/70 px-7 text-sm font-medium text-fg"
+              data-track="hero-cover"
             >
-              <ScanFace className="size-4" />
-              Scan my face
+              Get Your Event Covered
             </Link>
           </div>
         </div>
       </section>
 
       <div className="border-y border-border bg-surface py-3">
-        <p className="mx-auto max-w-6xl px-5 text-center text-xs tracking-[0.18em] text-muted">
+        <p className="mx-auto max-w-6xl px-5 text-center font-hero text-sm tracking-[0.18em] text-muted">
           {neighborhoods.join("  ·  ")}
         </p>
       </div>
 
-      <HighlightReel />
-
-      <section className="border-b border-border py-16">
-        <div className="mx-auto grid max-w-6xl gap-4 px-5 md:grid-cols-3">
-          <Door
-            to="/photos"
-            kicker="GUESTS"
-            title="Find your photos"
-            body="Event or code first. Face scan if you want it."
-          />
-          <Door
-            to="/events"
-            kicker="ORGANIZERS"
-            title="Bring WTAE"
-            body="Tell us the date. We cover the room and deliver the gallery."
-          />
-          <Door
-            to="/creators"
-            kicker="PHOTOGRAPHERS"
-            title="Shoot with us"
-            body="Name, city, Instagram, availability. Five minutes."
-          />
+      <section className="py-16">
+        <div className="mx-auto max-w-6xl px-5">
+          <div className="mb-8 flex items-end justify-between">
+            <div>
+              <LiveBadge />
+              <h2 className="mt-2 font-hero text-5xl text-fg">HAPPENING NOW</h2>
+            </div>
+            <Link to="/explore" className="hidden text-sm text-gold md:inline">
+              All events →
+            </Link>
+          </div>
+          {live.length === 0 ? (
+            <p className="text-muted">Nothing live this minute. Check This Weekend.</p>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {live.map((event) => (
+                <EventCard key={event.slug} event={event} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      <section className="bg-surface py-16">
+      <section className="border-t border-border bg-surface py-16">
         <div className="mx-auto max-w-6xl px-5">
-          <div className="mb-8 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-xs tracking-[0.2em] text-accent">IN THE CITY</p>
-              <h2 className="mt-1 font-display text-3xl text-fg">What’s live in Atlanta</h2>
+          <h2 className="font-hero text-5xl text-fg">THIS WEEKEND IN ATLANTA</h2>
+          <p className="mt-2 text-muted">Nights worth leaving the house for.</p>
+          {weekend.length === 0 ? (
+            <p className="mt-8 text-muted">No weekend listings yet.</p>
+          ) : (
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {weekend.map((event) => (
+                <EventCard key={event.slug} event={event} />
+              ))}
             </div>
-            <Link to="/explore" className="hidden text-sm text-accent md:inline">
-              All neighborhoods →
-            </Link>
-          </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {events.map((event) => (
-              <EventCard key={event.slug} event={event} />
+          )}
+        </div>
+      </section>
+
+      <HighlightReel />
+
+      <section className="py-16">
+        <div className="mx-auto max-w-6xl px-5">
+          <h2 className="font-hero text-5xl text-fg">EXPLORE ATLANTA YOUR WAY</h2>
+          <p className="mt-2 text-muted">Only categories with live WTAE coverage.</p>
+          <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3">
+            {categories.map((category) => (
+              <Link
+                key={category}
+                to="/explore"
+                search={{ category }}
+                className="group relative overflow-hidden rounded-md"
+                data-track="category-selected"
+              >
+                <img
+                  src={categoryArt[category]}
+                  alt=""
+                  className="aspect-[16/10] w-full object-cover opacity-70 transition-opacity group-hover:opacity-90"
+                />
+                <span className="absolute inset-x-0 bottom-0 bg-bg/70 px-4 py-3 font-hero text-2xl">{category}</span>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-20 text-center">
-        <h2 className="font-display text-3xl text-fg md:text-5xl">
-          The city too busy to hate
+      <section className="border-y border-border bg-surface py-16">
+        <div className="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-2">
+          <div>
+            <p className="font-hero text-sm tracking-[0.2em] text-gold">ORGANIZERS</p>
+            <h2 className="mt-2 font-hero text-5xl">GET YOUR EVENT COVERED</h2>
+            <p className="mt-4 max-w-md text-muted">
+              We shoot the room. Guests find themselves. Atlanta remembers the night.
+            </p>
+            <Link
+              to="/events"
+              className="mt-8 inline-flex h-12 items-center rounded-full bg-gold px-6 text-sm font-semibold text-gold-fg"
+            >
+              Request coverage
+            </Link>
+          </div>
+          <div>
+            <p className="font-hero text-sm tracking-[0.2em] text-gold">PHOTOGRAPHERS</p>
+            <h2 className="mt-2 font-hero text-5xl">SHOOT THE CITY</h2>
+            <p className="mt-4 max-w-md text-muted">
+              Independent shooters. Clear offers. Work that actually gets seen.
+            </p>
+            <Link
+              to="/creators"
+              className="mt-8 inline-flex h-12 items-center rounded-full border border-gold px-6 text-sm font-semibold text-gold"
+            >
+              Apply to shoot
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24 text-center">
+        <h2 className="font-hero text-5xl text-fg md:text-7xl">
+          THE CITY TOO BUSY TO HATE
           <br />
-          <span className="text-accent">never stops being photographed.</span>
+          <span className="text-gold">NEVER STOPS BEING PHOTOGRAPHED.</span>
         </h2>
-        <p className="mt-4 text-muted">404 energy. Your night. Your gallery.</p>
         <Link
-          to="/photos"
-          className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-accent px-8 text-sm font-semibold text-accent-fg"
+          to="/explore"
+          className="mt-10 inline-flex h-12 items-center rounded-full bg-gold px-8 text-sm font-semibold text-gold-fg"
         >
-          Find my photos
-          <ArrowRight className="size-4" />
+          Explore Events
         </Link>
       </section>
 
       <SiteFooter />
     </div>
-  );
-}
-
-function Door({
-  to,
-  kicker,
-  title,
-  body,
-}: {
-  to: "/photos" | "/events" | "/creators";
-  kicker: string;
-  title: string;
-  body: string;
-}) {
-  return (
-    <Link
-      to={to}
-      className="rounded-xl border border-border bg-surface p-6 transition-colors hover:border-accent/40"
-    >
-      <p className="text-xs tracking-[0.18em] text-accent">{kicker}</p>
-      <h3 className="mt-2 font-display text-2xl">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted">{body}</p>
-    </Link>
   );
 }

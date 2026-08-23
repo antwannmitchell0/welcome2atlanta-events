@@ -1,28 +1,36 @@
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #0a0a0b;
-  --color-surface: #121214;
-  --color-elevated: #1a1a1c;
-  --color-fg: #f3efe6;
-  --color-muted: #9a9588;
-  --color-subtle: #6f6b62;
-  --color-accent: #cfc6b0;
-  --color-accent-fg: #0a0a0b;
-  --color-border: #2a2926;
-  --color-live: #c45c4a;
-  --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  --color-bg: #070707;
+  --color-surface: #0b0b0b;
+  --color-elevated: #141414;
+  --color-fg: #f5f5f5;
+  --color-muted: #a8a8a8;
+  --color-subtle: #6e6e6e;
+  --color-gold: #d4af37;
+  --color-gold-fg: #070707;
+  --color-accent: #d4af37;
+  --color-accent-fg: #070707;
+  --color-live: #e31b23;
+  --color-live-fg: #ffffff;
+  --color-border: #222222;
+  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-hero: "Bebas Neue", "Arial Narrow", sans-serif;
+  --font-display: "Bebas Neue", "Arial Narrow", sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
 @layer base {
   html {
     background: var(--color-bg);
     color: var(--color-fg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
@@ -32,13 +40,30 @@
     min-height: 100vh;
   }
 
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
 
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 3px;
+  }
+
   ::selection {
-    background: color-mix(in oklab, var(--color-accent) 35%, transparent);
+    background: color-mix(in oklab, var(--color-gold) 40%, transparent);
     color: var(--color-fg);
   }
 }
@@ -46,6 +71,32 @@
 @layer utilities {
   .mask-x {
     mask-image: linear-gradient(to right, transparent, black 4%, black 96%, transparent);
+  }
+
+  .font-hero,
+  .font-display {
+    font-family: var(--font-hero);
+    letter-spacing: 0.04em;
+    line-height: 0.9;
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+}
+
+.live-pulse {
+  animation: live-pulse 1.8s ease-out infinite;
+}
+
+@keyframes live-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
   }
 }
 
@@ -74,6 +125,7 @@
     transition-duration: 0.01ms !important;
   }
 
+  .live-pulse,
   .reel-track {
     animation: none;
   }

@@ -9,29 +9,25 @@ function Privacy() {
     <div className="min-h-screen bg-bg text-fg">
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-5 py-16">
-        <h1 className="font-display text-4xl">Privacy</h1>
+        <h1 className="font-hero text-6xl">PRIVACY</h1>
         <p className="mt-3 text-sm text-subtle">Last updated: August 2026</p>
         <section className="mt-10 space-y-8 text-muted leading-relaxed">
           <div>
-            <h2 className="text-xl font-medium text-fg">Your photos</h2>
+            <h2 className="font-hero text-3xl text-fg">Your photos</h2>
             <p className="mt-3">
               Event photos are available to attendees through this gallery. You can find, view, and share photos you appear in. We do not sell your photos.
             </p>
           </div>
           <div>
-            <h2 className="text-xl font-medium text-fg">Face scan</h2>
+            <h2 className="font-hero text-3xl text-fg">Face scan</h2>
             <p className="mt-3">
-              Face scan is optional. Matching runs on your device in the browser. Your camera image or uploaded
-              selfie is used only to search live event galleries during that session. We do not upload your face
-              to our servers, do not store biometric templates, do not sell face data, and do not use it to train
-              models. Camera access can be denied at any time. You can find photos by event, phone, or event code
-              instead.
+              Face scan is optional. Matching runs on your device in the browser. Your camera image is used only to search live galleries during that session. We do not store biometric templates.
             </p>
           </div>
           <div>
-            <h2 className="text-xl font-medium text-fg">Contact information</h2>
+            <h2 className="font-hero text-3xl text-fg">Event and photographer forms</h2>
             <p className="mt-3">
-              Phone numbers used to locate photos are used solely for that purpose.
+              Coverage requests and photographer applications are stored so we can reply. We do not sell that information. Founder notes on those records are internal and never shown publicly.
             </p>
           </div>
         </section>
