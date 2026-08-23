@@ -10,13 +10,25 @@ const rawDatabaseUrl =
 const databaseUrl =
   rawDatabaseUrl && rawDatabaseUrl.trim() ? rawDatabaseUrl : undefined;
 
+/** Vercel serverless cannot run the in-memory PGLite WASM fallback. */
+function runningOnVercel(): boolean {
+  return Boolean(typeof process !== "undefined" && process.env.VERCEL);
+}
+
 /**
  * Active backend: real **Neon** when `DATABASE_URL` is set (deployed / configured
  * sandbox), otherwise a local embedded **PGLite** (Postgres compiled to WASM) so
  * the app has a working database even with nothing configured — the live preview
  * included. Swap in Neon later by just setting `DATABASE_URL`; no code changes.
+ *
+ * On Vercel, PGLite is never selected. Missing `DATABASE_URL` there is a
+ * configuration error, not a fallback — in-memory WASM Postgres cannot persist
+ * and crashes the serverless function on import.
  */
 export const dbSource: DbSource = databaseUrl ? "neon" : "pglite";
+
+export const VERCEL_DATABASE_REQUIRED =
+  "DATABASE_URL is required on Vercel. Persistent Postgres is not configured.";
 
 /**
  * Minimal shared SQL surface, satisfied by both Neon and PGLite. Both the
@@ -176,6 +188,9 @@ async function createSql(): Promise<Sql> {
         "or a server route loader, never from client code.",
     );
   }
+  if (!databaseUrl && runningOnVercel()) {
+    throw new Error(VERCEL_DATABASE_REQUIRED);
+  }
   return dbSource === "neon" ? createNeonSql() : createPgliteSql();
 }
 
@@ -200,6 +215,9 @@ export function getSql(): Promise<Sql> {
  * Kysely dialect). Throws when `DATABASE_URL` is set (that path uses Neon).
  */
 export async function getPglite(): Promise<import("@electric-sql/pglite").PGlite> {
+  if (runningOnVercel()) {
+    throw new Error(VERCEL_DATABASE_REQUIRED);
+  }
   if (dbSource !== "pglite") {
     throw new Error("getPglite() is only available on the PGLite fallback (no DATABASE_URL)");
   }
@@ -215,21 +233,24 @@ export async function getPglite(): Promise<import("@electric-sql/pglite").PGlite
  * - **PGLite** (preview / no `DATABASE_URL`): open the in-memory DB and apply
  *   `migrations/*.sql`. Idempotent — concurrent callers share one promise.
  * - **Neon**: no-op (pool is created lazily on first query).
+ * - **Vercel without DATABASE_URL**: no-op. Public pages must still render;
+ *   handlers that need SQL fail closed via `getSql()`.
  *
  * Vite `configureServer` awaits this at dev startup; production imports of this
  * module kick it off immediately (see bottom of file).
  */
 export function ensureDbReady(): Promise<void> {
+  if (runningOnVercel() && !databaseUrl) return Promise.resolve();
   if (dbSource !== "pglite") return Promise.resolve();
   return getSql().then(() => undefined);
 }
 
 // Server-only eager start: kick PGLite bootstrap as soon as this module loads in
-// Node. Client bundles never hit this path (`getSql` throws in the browser).
+// Node. Never on Vercel — WASM PGLite takes down the whole serverless function.
 const globalBoot = globalThis as typeof globalThis & {
   __pgBootstrapPromise__?: Promise<void>;
 };
-if (typeof window === "undefined" && dbSource === "pglite") {
+if (typeof window === "undefined" && dbSource === "pglite" && !runningOnVercel()) {
   globalBoot.__pgBootstrapPromise__ ??= ensureDbReady().catch((err) => {
     globalBoot.__pgBootstrapPromise__ = undefined;
     console.error("[db] PGLite bootstrap failed:", err);

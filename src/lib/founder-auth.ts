@@ -86,6 +86,7 @@ export function evaluateAccess(input: {
 export function evaluateClaim(input: {
   userId?: string | null;
   email?: string | null;
+  emailVerified?: boolean | null;
   providedSecret?: string | null;
   config: FounderConfig;
   state: FounderState;
@@ -97,7 +98,9 @@ export function evaluateClaim(input: {
   if (input.state.bootstrapClosed) return { ok: false, reason: "bootstrap-closed" };
 
   const email = input.email?.trim().toLowerCase() ?? "";
-  if (email && input.config.allowedEmails.includes(email)) {
+  // Allowlist is only honored for a verified identity. Open email/password
+  // sign-up must not let a stranger register as the founder address.
+  if (email && input.emailVerified === true && input.config.allowedEmails.includes(email)) {
     return { ok: true, reason: "email-allowlist" };
   }
 

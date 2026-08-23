@@ -2,14 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { events } from "@/lib/events";
-import {
-  FOUNDER_FORBIDDEN,
-  evaluateAccess,
-  evaluateClaim,
-  readFounderConfig,
-  type AccessStatus,
-  type FounderState,
-} from "@/lib/founder-auth";
+import type { AccessStatus, FounderState } from "@/lib/founder-auth";
+
+const FOUNDER_FORBIDDEN = "Forbidden";
 
 const eventStatus = z.enum(["new", "reviewing", "contacted", "approved", "declined", "completed"]);
 const photoStatus = z.enum(["new", "reviewing", "interview", "approved", "declined"]);
@@ -71,11 +66,14 @@ async function loadFounderState(sql: Sql): Promise<FounderState> {
   };
 }
 
-async function loadUserEmail(sql: Sql, userId: string): Promise<string | null> {
-  const rows = await sql<{ email: string }>`
-    select email from "user" where id = ${userId} limit 1
+async function loadUserIdentity(sql: Sql, userId: string) {
+  const rows = await sql<{ email: string; emailVerified: boolean }>`
+    select email, "emailVerified" as "emailVerified" from "user" where id = ${userId} limit 1
   `;
-  return rows[0]?.email ?? null;
+  return {
+    email: rows[0]?.email ?? null,
+    emailVerified: Boolean(rows[0]?.emailVerified),
+  };
 }
 
 async function persistFounderClaim(sql: Sql, userId: string) {
@@ -109,14 +107,16 @@ async function requireFounder(userId: string) {
 export const getFounderAccess = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<{ status: AccessStatus }> => {
+    const { evaluateAccess, evaluateClaim, readFounderConfig } = await import("@/lib/founder-auth");
     const { getSql } = await import("@/lib/db");
     const sql = await getSql();
     const state = await loadFounderState(sql);
     const config = readFounderConfig();
-    const email = await loadUserEmail(sql, context.userId);
+    const identity = await loadUserIdentity(sql, context.userId);
     const auto = evaluateClaim({
       userId: context.userId,
-      email,
+      email: identity.email,
+      emailVerified: identity.emailVerified,
       providedSecret: "",
       config,
       state,
@@ -135,14 +135,16 @@ export const claimFounder = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator(z.object({ secret: z.string().min(1).max(200) }))
   .handler(async ({ context, data }) => {
+    const { evaluateClaim, readFounderConfig } = await import("@/lib/founder-auth");
     const { getSql } = await import("@/lib/db");
     const sql = await getSql();
     const state = await loadFounderState(sql);
     const config = readFounderConfig();
-    const email = await loadUserEmail(sql, context.userId);
+    const identity = await loadUserIdentity(sql, context.userId);
     const decision = evaluateClaim({
       userId: context.userId,
-      email,
+      email: identity.email,
+      emailVerified: identity.emailVerified,
       providedSecret: data.secret,
       config,
       state,

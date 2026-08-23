@@ -129,12 +129,26 @@ describe("authorized founder accepted", () => {
     const claim = evaluateClaim({
       userId: "founder-1",
       email: "FOUNDER@welcome2atlantaevents.com",
+      emailVerified: true,
       providedSecret: "",
       config,
       state: open,
     });
     assert.equal(claim.ok, true);
     if (claim.ok) assert.equal(claim.reason, "email-allowlist");
+  });
+
+  it("rejects an allowlisted email that is not verified", () => {
+    const claim = evaluateClaim({
+      userId: "imposter",
+      email: "founder@welcome2atlantaevents.com",
+      emailVerified: false,
+      providedSecret: "",
+      config,
+      state: open,
+    });
+    assert.equal(claim.ok, false);
+    if (!claim.ok) assert.equal(claim.reason, "not-authorized");
   });
 
   it("accepts the one-time claim secret during open bootstrap", () => {

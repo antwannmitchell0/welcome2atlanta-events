@@ -5,7 +5,8 @@ import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { RedirectToSignIn, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { claimFounder, getFounderAccess } from "@/lib/wtae-data";
-import type { AccessStatus } from "@/lib/founder-auth";
+
+type AccessStatus = "granted" | "claim-required" | "denied";
 
 export const Route = createFileRoute("/portal")({
   component: PortalShell,
