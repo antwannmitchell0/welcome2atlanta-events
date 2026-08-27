@@ -4,8 +4,8 @@ export const Route = createFileRoute("/api/portal/storage-health")({
   server: {
     handlers: {
       GET: async () => {
-        const { storageHealthResponse } = await import("@/lib/portal/upload-http");
-        return storageHealthResponse();
+        const { storageHealth } = await import("@/lib/portal/blob-config");
+        return Response.json(storageHealth());
       },
     },
   },
