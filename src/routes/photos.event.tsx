@@ -1,22 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Search } from "lucide-react";
-import { events, getEventByCode } from "@/lib/events";
+import { events, getEventByCode, type EventRecord } from "@/lib/events";
+import { listPublicGalleries, lookupPublicGalleryByCode } from "@/lib/portal/public-galleries";
 
-export const Route = createFileRoute("/photos/event")({ component: SearchByEvent });
+export const Route = createFileRoute("/photos/event")({
+  loader: () => listPublicGalleries(),
+  component: SearchByEvent,
+});
 
 function SearchByEvent() {
+  const { published } = Route.useLoaderData();
   const [query, setQuery] = useState("");
   const [code, setCode] = useState("");
   const [codeError, setCodeError] = useState<string | null>(null);
-  const matched = getEventByCode(code);
+  const [matched, setMatched] = useState<EventRecord | null>(null);
+  const [looking, setLooking] = useState(false);
 
-  const filtered = events.filter((event) => {
+  const catalog = useMemo(() => [...events, ...published], [published]);
+  const sampleMatch = getEventByCode(code);
+
+  const filtered = catalog.filter((event) => {
     const hay = `${event.title} ${event.venue} ${event.neighborhood} ${event.code}`.toLowerCase();
     return hay.includes(query.toLowerCase());
   });
+
+  const openTarget = sampleMatch ?? matched;
+
+  async function openCode() {
+    setCodeError(null);
+    const sample = getEventByCode(code);
+    if (sample) {
+      if (sample.photoCount === 0) setCodeError("That gallery isn’t live yet.");
+      else setMatched(sample);
+      return;
+    }
+    setLooking(true);
+    try {
+      const found = await lookupPublicGalleryByCode({ data: { code } });
+      if (!found) setCodeError("No event matches that code.");
+      else if (found.event.photoCount === 0) setCodeError("That gallery isn’t live yet.");
+      else setMatched(found.event);
+    } catch {
+      setCodeError("No event matches that code.");
+    } finally {
+      setLooking(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-bg text-fg">
@@ -44,14 +76,15 @@ function SearchByEvent() {
             onChange={(e) => {
               setCode(e.target.value.toUpperCase());
               setCodeError(null);
+              setMatched(null);
             }}
             placeholder="ATL-404"
             className="h-12 flex-1 rounded-xl border border-border bg-surface px-4 tracking-widest text-fg placeholder:text-subtle outline-none focus:border-accent"
           />
-          {matched && matched.photoCount > 0 ? (
+          {openTarget && openTarget.photoCount > 0 ? (
             <Link
               to="/events/$slug"
-              params={{ slug: matched.slug }}
+              params={{ slug: openTarget.slug }}
               className="inline-flex h-12 items-center gap-2 rounded-full bg-accent px-5 font-semibold text-accent-fg"
             >
               Open
@@ -61,20 +94,16 @@ function SearchByEvent() {
             <button
               type="button"
               className="h-12 rounded-full bg-accent px-5 font-semibold text-accent-fg disabled:opacity-40"
-              disabled={code.trim().length < 3}
-              onClick={() => {
-                const event = getEventByCode(code);
-                if (!event) setCodeError("No event matches that code.");
-                else if (event.photoCount === 0) setCodeError("That gallery isn’t live yet.");
-              }}
+              disabled={code.trim().length < 3 || looking}
+              onClick={() => void openCode()}
             >
-              Open
+              {looking ? "Looking…" : "Open"}
             </button>
           )}
         </div>
-        {matched && matched.photoCount > 0 ? (
+        {openTarget && openTarget.photoCount > 0 ? (
           <p className="mt-2 text-sm text-accent">
-            {matched.title} · {matched.neighborhood}
+            {openTarget.title} · {openTarget.neighborhood}
           </p>
         ) : null}
         {codeError ? <p className="mt-2 text-sm text-live">{codeError}</p> : null}

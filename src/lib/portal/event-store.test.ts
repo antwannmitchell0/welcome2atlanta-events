@@ -9,6 +9,8 @@ import { parseEventInput } from "./event-input.ts";
 import {
   createOwnerEvent,
   getOwnerEvent,
+  getPublishedEventByCode,
+  getPublishedEventBySlug,
   listOwnerEvents,
   listPublishedEvents,
   setOwnerEventStatus,
@@ -119,7 +121,10 @@ describe("owner event store", () => {
     assert.equal(isPublicGalleryEvent("draft"), false);
     assert.equal(isPublicGalleryEvent("archived"), false);
     assert.equal(isPublicGalleryEvent("published"), true);
+    assert.equal(await getPublishedEventBySlug(sql, created.slug), null);
+    assert.equal(await getPublishedEventByCode(sql, created.eventCode), null);
   });
+
 
   it("refuses to publish without a ready visible photo", async () => {
     const sql = await portalDb();

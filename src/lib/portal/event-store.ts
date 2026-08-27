@@ -185,3 +185,22 @@ export async function setOwnerEventStatus(sql: SqlLike, id: string, status: Gall
   );
   return { ok: true as const, status };
 }
+
+export async function getPublishedEventBySlug(sql: SqlLike, slug: string): Promise<GalleryEventRow | null> {
+  const rows = await sql.query<Parameters<typeof mapEvent>[0]>(
+    `${EVENT_SELECT} where e.slug = $1 and e.status = 'published'`,
+    [slug],
+  );
+  return rows[0] ? mapEvent(rows[0]) : null;
+}
+
+export async function getPublishedEventByCode(sql: SqlLike, code: string): Promise<GalleryEventRow | null> {
+  const normalized = normalizeEventCode(code);
+  if (!normalized) return null;
+  const rows = await sql.query<Parameters<typeof mapEvent>[0]>(
+    `${EVENT_SELECT} where e.event_code = $1 and e.status = 'published'`,
+    [normalized],
+  );
+  return rows[0] ? mapEvent(rows[0]) : null;
+}
+
