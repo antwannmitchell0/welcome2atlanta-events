@@ -1,25 +1,21 @@
 import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { PortalChrome } from "@/lib/portal/chrome";
+import { PUBLIC_PORTAL_PATHS, portalBeforeLoad } from "@/lib/portal/guard";
 import { getPortalMe } from "@/lib/portal/me";
-import { safePortalNext } from "@/lib/portal/redirect";
-
-const PUBLIC_PORTAL_PATHS = new Set([
-  "/portal/login",
-  "/portal/forgot-password",
-  "/portal/reset-password",
-]);
 
 export const Route = createFileRoute("/portal")({
   beforeLoad: async ({ location }) => {
     if (PUBLIC_PORTAL_PATHS.has(location.pathname)) return {};
     const me = await getPortalMe();
-    if (!me.ok) {
+    const decision = portalBeforeLoad(location.pathname, location.search, me);
+    if (decision.kind === "login") {
       throw redirect({
         to: "/portal/login",
-        search: { next: safePortalNext(`${location.pathname}${location.search}`) },
+        search: { next: decision.next },
       });
     }
-    return { actor: me.actor };
+    if (decision.kind === "allow") return { actor: decision.actor };
+    return {};
   },
   component: PortalFrame,
   head: () => ({

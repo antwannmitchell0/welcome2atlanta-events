@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth/client";
+import { INVALID_LOGIN_MESSAGE } from "@/lib/portal/guard";
 import { safePortalNext } from "@/lib/portal/redirect";
 
 export const Route = createFileRoute("/portal/login")({
@@ -33,13 +34,13 @@ function PortalLogin() {
     try {
       const result = await authClient.signIn.email({ email, password, callbackURL: next });
       if (result.error) {
-        setError("Invalid email or password.");
+        setError(INVALID_LOGIN_MESSAGE);
         setBusy(false);
         return;
       }
       window.location.assign(next);
     } catch {
-      setError("Invalid email or password.");
+      setError(INVALID_LOGIN_MESSAGE);
       setBusy(false);
     }
   }
