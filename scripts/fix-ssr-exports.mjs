@@ -38,13 +38,13 @@ async function main() {
     let next = await readFile(path, "utf8");
     const original = next;
 
-    if (name.startsWith("ssr.") && next.includes("ssr_exports as s") && next.includes("server_default")) {
+    if (name.startsWith("ssr.") && /ssr_exports as/.test(next) && next.includes("server_default")) {
       if (next.includes("var ssr_exports = {}")) {
         next = next.replace("var ssr_exports = {}", "var ssr_exports = server_default");
-      } else if (!next.includes("var ssr_exports")) {
-        next = next.replace(/export \{/, "var ssr_exports = server_default;\nexport {");
       } else if (next.includes("var ssr_exports = {};") && !next.includes("var ssr_exports = server_default")) {
         next = next.replace("var ssr_exports = {};", "var ssr_exports = server_default;");
+      } else if (!next.includes("var ssr_exports")) {
+        next = next.replace(/export \{/, "var ssr_exports = server_default;\nexport {");
       }
     }
 
@@ -74,7 +74,7 @@ async function main() {
   const ssr2 = ssr2Name ? await readFile(join(ssrDir, ssr2Name), "utf8") : "";
 
   const ssrOk =
-    !ssr.includes("ssr_exports as s") || ssr.includes("var ssr_exports = server_default");
+    !/ssr_exports as/.test(ssr) || ssr.includes("var ssr_exports = server_default");
   const ssr2Ok = !/from "\.\/ssr\.mjs"/.test(ssr2);
   if (!ssrOk || !ssr2Ok) {
     console.error("[fix-ssr] verification failed — SSR cycle still present.");
