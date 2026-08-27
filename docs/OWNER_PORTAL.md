@@ -21,9 +21,9 @@ Reset the owner password with `/portal/forgot-password` after `RESEND_API_KEY` i
 
 ## Storage and EXIF
 
-- Default private store: Postgres `storage_object` (bytea). Optional Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set.
+- Private store: Vercel Blob object keys only. Neon stores metadata, status and authorization — never original bytes or public JPEG derivatives.
 - Public pages only receive `/api/media/:photoId` when the event is `published` and the photo is `ready` and not `hidden`.
-- Public derivatives are re-encoded JPEGs with EXIF stripped. Originals retain EXIF privately.
+- Public derivatives are re-encoded JPEGs with EXIF stripped. Originals retain EXIF privately in Blob.
 
 ## Sample galleries
 

@@ -71,14 +71,6 @@ create table if not exists event_assignment (
   constraint event_assignment_uq unique (event_id, photographer_user_id)
 );
 
-create table if not exists storage_object (
-  object_key text primary key,
-  mime_type text not null,
-  byte_size integer not null,
-  bytes bytea not null,
-  created_at timestamptz not null default now()
-);
-
 create table if not exists upload_failure (
   id text primary key,
   event_id text,
