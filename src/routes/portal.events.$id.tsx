@@ -4,6 +4,8 @@ import { useState } from "react";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { getGalleryEvent, setEventStatus } from "@/lib/portal/events";
 import type { GalleryEventStatus } from "@/lib/portal/event-input";
+import { PhotoManager } from "@/lib/portal/photo-manager";
+import { PhotoUploader } from "@/lib/portal/photo-uploader";
 
 export const Route = createFileRoute("/portal/events/$id")({
   loader: ({ params }) => getGalleryEvent({ data: { id: params.id } }),
@@ -16,10 +18,14 @@ export const Route = createFileRoute("/portal/events/$id")({
 });
 
 function EventDetail() {
-  const { event } = Route.useLoaderData();
+  const { event, photos } = Route.useLoaderData();
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  async function refresh() {
+    await router.invalidate();
+  }
 
   async function changeStatus(status: GalleryEventStatus) {
     setBusy(true);
@@ -27,7 +33,7 @@ function EventDetail() {
     try {
       await setEventStatus({ data: { id: event.id, status } });
       setMessage(status === "published" ? "Event published." : `Event marked ${status}.`);
-      await router.invalidate();
+      await refresh();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Could not update status.");
     } finally {
@@ -134,10 +140,22 @@ function EventDetail() {
       </div>
       {message ? <p className="text-sm text-accent">{message}</p> : null}
 
-      <section className="rounded-xl border border-dashed border-border py-16 text-center text-muted">
-        {event.photo_count === 0
-          ? "No ready photos yet. Uploads land in this folder after storage is connected."
-          : `${event.photo_count} ready photos. Management tools arrive with the upload checkpoint.`}
+      <section className="space-y-4">
+        <div>
+          <h2 className="font-display text-2xl">Upload</h2>
+          <p className="mt-1 text-sm text-muted">Originals stay private. Public pages only receive EXIF-stripped derivatives.</p>
+        </div>
+        <PhotoUploader eventId={event.id} onChanged={() => void refresh()} />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="font-display text-2xl">Manage photos</h2>
+        <PhotoManager
+          eventId={event.id}
+          coverPhotoId={event.cover_photo_id}
+          photos={photos}
+          onChanged={() => void refresh()}
+        />
       </section>
     </div>
   );

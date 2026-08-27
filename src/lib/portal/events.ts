@@ -10,6 +10,13 @@ import {
   updateOwnerEvent,
 } from "./event-store.ts";
 import { getPortalMe } from "./me.ts";
+import {
+  deleteEventPhoto,
+  listEventPhotos,
+  reorderEventPhotos,
+  setPhotoCover,
+  setPhotoFlags,
+} from "./photo-store.ts";
 import { assertOwner } from "./session.ts";
 
 async function requireOwner() {
@@ -30,9 +37,11 @@ export const getGalleryEvent = createServerFn({ method: "GET" })
   .validator(z.object({ id: z.string().min(1) }))
   .handler(async ({ data }) => {
     await requireOwner();
-    const event = await getOwnerEvent(await sql(), data.id);
+    const db = await sql();
+    const event = await getOwnerEvent(db, data.id);
     if (!event) throw new Error("Event not found.");
-    return { event };
+    const photos = await listEventPhotos(db, data.id);
+    return { event, photos };
   });
 
 export const createGalleryEvent = createServerFn({ method: "POST" })
@@ -55,4 +64,39 @@ export const setEventStatus = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireOwner();
     return setOwnerEventStatus(await sql(), data.id, data.status);
+  });
+
+export const setCoverPhoto = createServerFn({ method: "POST" })
+  .validator(z.object({ eventId: z.string().min(1), photoId: z.string().min(1) }))
+  .handler(async ({ data }) => {
+    await requireOwner();
+    return setPhotoCover(await sql(), data.eventId, data.photoId);
+  });
+
+export const setGalleryPhotoFlags = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      photoId: z.string().min(1),
+      featured: z.boolean().optional(),
+      hidden: z.boolean().optional(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    await requireOwner();
+    return setPhotoFlags(await sql(), data.photoId, { featured: data.featured, hidden: data.hidden });
+  });
+
+export const reorderGalleryPhotos = createServerFn({ method: "POST" })
+  .validator(z.object({ eventId: z.string().min(1), photoIds: z.array(z.string().min(1)).min(1) }))
+  .handler(async ({ data }) => {
+    await requireOwner();
+    return reorderEventPhotos(await sql(), data.eventId, data.photoIds);
+  });
+
+export const deleteGalleryPhoto = createServerFn({ method: "POST" })
+  .validator(z.object({ eventId: z.string().min(1), photoId: z.string().min(1) }))
+  .handler(async ({ data }) => {
+    await requireOwner();
+    const { deletePrivateBlob } = await import("./blob-io.ts");
+    return deleteEventPhoto(await sql(), data.eventId, data.photoId, deletePrivateBlob);
   });
