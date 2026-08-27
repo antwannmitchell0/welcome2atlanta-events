@@ -17,6 +17,9 @@ export function PortalChrome({
           <Link to="/portal" className="font-display text-xl">
             WTAE Mission Control
           </Link>
+          <Link to="/portal/events/new" className="hidden text-sm text-muted hover:text-fg sm:inline">
+            Create event
+          </Link>
         </div>
         <div className="flex items-center gap-3 text-sm">
           <span className="hidden text-muted sm:inline">{displayName || email || "Owner"}</span>

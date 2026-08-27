@@ -94,6 +94,9 @@ export const events: EventRecord[] = [
   },
 ];
 
+/** Static demo galleries. Database events are additive and never replace these slugs or codes. */
+export const sampleEvents = events;
+
 export function getEvent(slug: string) {
   return events.find((event) => event.slug === slug);
 }

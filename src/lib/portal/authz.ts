@@ -35,6 +35,10 @@ export function publicPhotoVisible(input: {
   return input.eventStatus === "published" && input.uploadStatus === "ready" && input.hidden === false;
 }
 
+export function isPublicGalleryEvent(status: string): boolean {
+  return status === "published";
+}
+
 export function canPublishEvent(input: {
   name: string;
   slug: string;

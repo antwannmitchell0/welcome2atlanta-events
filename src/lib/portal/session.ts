@@ -1,4 +1,4 @@
-import type { AccountStatus, PortalActor, PortalRole } from "./authz";
+import type { AccountStatus, PortalActor, PortalRole } from "./authz.ts";
 
 export type PortalMe =
   | { ok: true; actor: PortalActor }
@@ -23,4 +23,11 @@ export function resolvePortalMe(input: {
       displayName: profile.display_name,
     },
   };
+}
+
+export function assertOwner(me: PortalMe): PortalActor {
+  if (!me.ok) {
+    throw new Error(me.reason === "unauthenticated" ? "Unauthorized" : "Forbidden");
+  }
+  return me.actor;
 }

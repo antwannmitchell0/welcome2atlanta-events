@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CreatorsRouteImport } from './routes/creators'
 import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
@@ -21,6 +22,14 @@ import { Route as PhotosEventRouteImport } from './routes/photos.event'
 import { Route as PhotosFaceRouteImport } from './routes/photos.face'
 import { Route as PhotosPhoneRouteImport } from './routes/photos.phone'
 import { Route as PhotosQrRouteImport } from './routes/photos.qr'
+import { Route as PortalIndexRouteImport } from './routes/portal.index'
+import { Route as PortalForgotPasswordRouteImport } from './routes/portal.forgot-password'
+import { Route as PortalLoginRouteImport } from './routes/portal.login'
+import { Route as PortalResetPasswordRouteImport } from './routes/portal.reset-password'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as PortalEventsIdRouteImport } from './routes/portal.events.$id'
+import { Route as PortalEventsNewRouteImport } from './routes/portal.events.new'
+import { Route as PortalEventsIdEditRouteImport } from './routes/portal.events.$id.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +49,11 @@ const CreatorsRoute = CreatorsRouteImport.update({
 const ExploreRoute = ExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -82,20 +96,69 @@ const PhotosQrRoute = PhotosQrRouteImport.update({
   path: '/photos/qr',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalForgotPasswordRoute = PortalForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalLoginRoute = PortalLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalResetPasswordRoute = PortalResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => PortalRoute,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalEventsIdRoute = PortalEventsIdRouteImport.update({
+  id: '/events/$id',
+  path: '/events/$id',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalEventsNewRoute = PortalEventsNewRouteImport.update({
+  id: '/events/new',
+  path: '/events/new',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalEventsIdEditRoute = PortalEventsIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => PortalEventsIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
   '/creators': typeof CreatorsRoute
   '/explore': typeof ExploreRoute
+  '/portal': typeof PortalRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/events/$slug': typeof EventsSlugRoute
   '/photos/event': typeof PhotosEventRoute
   '/photos/face': typeof PhotosFaceRoute
   '/photos/phone': typeof PhotosPhoneRoute
   '/photos/qr': typeof PhotosQrRoute
+  '/portal/forgot-password': typeof PortalForgotPasswordRoute
+  '/portal/login': typeof PortalLoginRoute
+  '/portal/reset-password': typeof PortalResetPasswordRoute
   '/events/': typeof EventsIndexRoute
   '/photos/': typeof PhotosIndexRoute
+  '/portal/': typeof PortalIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/portal/events/$id': typeof PortalEventsIdRouteWithChildren
+  '/portal/events/new': typeof PortalEventsNewRoute
+  '/portal/events/$id/edit': typeof PortalEventsIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -108,8 +171,16 @@ export interface FileRoutesByTo {
   '/photos/face': typeof PhotosFaceRoute
   '/photos/phone': typeof PhotosPhoneRoute
   '/photos/qr': typeof PhotosQrRoute
+  '/portal/forgot-password': typeof PortalForgotPasswordRoute
+  '/portal/login': typeof PortalLoginRoute
+  '/portal/reset-password': typeof PortalResetPasswordRoute
   '/events': typeof EventsIndexRoute
   '/photos': typeof PhotosIndexRoute
+  '/portal': typeof PortalIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/portal/events/$id': typeof PortalEventsIdRouteWithChildren
+  '/portal/events/new': typeof PortalEventsNewRoute
+  '/portal/events/$id/edit': typeof PortalEventsIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -117,14 +188,23 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/creators': typeof CreatorsRoute
   '/explore': typeof ExploreRoute
+  '/portal': typeof PortalRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/events/$slug': typeof EventsSlugRoute
   '/photos/event': typeof PhotosEventRoute
   '/photos/face': typeof PhotosFaceRoute
   '/photos/phone': typeof PhotosPhoneRoute
   '/photos/qr': typeof PhotosQrRoute
+  '/portal/forgot-password': typeof PortalForgotPasswordRoute
+  '/portal/login': typeof PortalLoginRoute
+  '/portal/reset-password': typeof PortalResetPasswordRoute
   '/events/': typeof EventsIndexRoute
   '/photos/': typeof PhotosIndexRoute
+  '/portal/': typeof PortalIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/portal/events/$id': typeof PortalEventsIdRouteWithChildren
+  '/portal/events/new': typeof PortalEventsNewRoute
+  '/portal/events/$id/edit': typeof PortalEventsIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -133,14 +213,23 @@ export interface FileRouteTypes {
     | '/contact'
     | '/creators'
     | '/explore'
+    | '/portal'
     | '/privacy'
     | '/events/$slug'
     | '/photos/event'
     | '/photos/face'
     | '/photos/phone'
     | '/photos/qr'
+    | '/portal/forgot-password'
+    | '/portal/login'
+    | '/portal/reset-password'
     | '/events/'
     | '/photos/'
+    | '/portal/'
+    | '/api/auth/$'
+    | '/portal/events/$id'
+    | '/portal/events/new'
+    | '/portal/events/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -153,22 +242,39 @@ export interface FileRouteTypes {
     | '/photos/face'
     | '/photos/phone'
     | '/photos/qr'
+    | '/portal/forgot-password'
+    | '/portal/login'
+    | '/portal/reset-password'
     | '/events'
     | '/photos'
+    | '/portal'
+    | '/api/auth/$'
+    | '/portal/events/$id'
+    | '/portal/events/new'
+    | '/portal/events/$id/edit'
   id:
     | '__root__'
     | '/'
     | '/contact'
     | '/creators'
     | '/explore'
+    | '/portal'
     | '/privacy'
     | '/events/$slug'
     | '/photos/event'
     | '/photos/face'
     | '/photos/phone'
     | '/photos/qr'
+    | '/portal/forgot-password'
+    | '/portal/login'
+    | '/portal/reset-password'
     | '/events/'
     | '/photos/'
+    | '/portal/'
+    | '/api/auth/$'
+    | '/portal/events/$id'
+    | '/portal/events/new'
+    | '/portal/events/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -176,6 +282,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   CreatorsRoute: typeof CreatorsRoute
   ExploreRoute: typeof ExploreRoute
+  PortalRoute: typeof PortalRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   EventsSlugRoute: typeof EventsSlugRoute
   PhotosEventRoute: typeof PhotosEventRoute
@@ -184,6 +291,7 @@ export interface RootRouteChildren {
   PhotosQrRoute: typeof PhotosQrRoute
   EventsIndexRoute: typeof EventsIndexRoute
   PhotosIndexRoute: typeof PhotosIndexRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -214,6 +322,13 @@ declare module '@tanstack/react-router' {
       path: '/explore'
       fullPath: '/explore'
       preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -272,14 +387,104 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PhotosQrRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/': {
+      id: '/portal/'
+      path: '/'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/forgot-password': {
+      id: '/portal/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/portal/forgot-password'
+      preLoaderRoute: typeof PortalForgotPasswordRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/login': {
+      id: '/portal/login'
+      path: '/login'
+      fullPath: '/portal/login'
+      preLoaderRoute: typeof PortalLoginRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/reset-password': {
+      id: '/portal/reset-password'
+      path: '/reset-password'
+      fullPath: '/portal/reset-password'
+      preLoaderRoute: typeof PortalResetPasswordRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/events/$id': {
+      id: '/portal/events/$id'
+      path: '/events/$id'
+      fullPath: '/portal/events/$id'
+      preLoaderRoute: typeof PortalEventsIdRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/events/new': {
+      id: '/portal/events/new'
+      path: '/events/new'
+      fullPath: '/portal/events/new'
+      preLoaderRoute: typeof PortalEventsNewRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/events/$id/edit': {
+      id: '/portal/events/$id/edit'
+      path: '/edit'
+      fullPath: '/portal/events/$id/edit'
+      preLoaderRoute: typeof PortalEventsIdEditRouteImport
+      parentRoute: typeof PortalEventsIdRoute
+    }
   }
 }
+
+interface PortalEventsIdRouteChildren {
+  PortalEventsIdEditRoute: typeof PortalEventsIdEditRoute
+}
+
+const PortalEventsIdRouteChildren: PortalEventsIdRouteChildren = {
+  PortalEventsIdEditRoute: PortalEventsIdEditRoute,
+}
+
+const PortalEventsIdRouteWithChildren = PortalEventsIdRoute._addFileChildren(
+  PortalEventsIdRouteChildren,
+)
+
+interface PortalRouteChildren {
+  PortalForgotPasswordRoute: typeof PortalForgotPasswordRoute
+  PortalLoginRoute: typeof PortalLoginRoute
+  PortalResetPasswordRoute: typeof PortalResetPasswordRoute
+  PortalIndexRoute: typeof PortalIndexRoute
+  PortalEventsIdRoute: typeof PortalEventsIdRouteWithChildren
+  PortalEventsNewRoute: typeof PortalEventsNewRoute
+}
+
+const PortalRouteChildren: PortalRouteChildren = {
+  PortalForgotPasswordRoute: PortalForgotPasswordRoute,
+  PortalLoginRoute: PortalLoginRoute,
+  PortalResetPasswordRoute: PortalResetPasswordRoute,
+  PortalIndexRoute: PortalIndexRoute,
+  PortalEventsIdRoute: PortalEventsIdRouteWithChildren,
+  PortalEventsNewRoute: PortalEventsNewRoute,
+}
+
+const PortalRouteWithChildren =
+  PortalRoute._addFileChildren(PortalRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ContactRoute: ContactRoute,
   CreatorsRoute: CreatorsRoute,
   ExploreRoute: ExploreRoute,
+  PortalRoute: PortalRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   EventsSlugRoute: EventsSlugRoute,
   PhotosEventRoute: PhotosEventRoute,
@@ -288,16 +493,8 @@ const rootRouteChildren: RootRouteChildren = {
   PhotosQrRoute: PhotosQrRoute,
   EventsIndexRoute: EventsIndexRoute,
   PhotosIndexRoute: PhotosIndexRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
