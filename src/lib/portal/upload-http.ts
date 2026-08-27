@@ -1,6 +1,6 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import type { AccountStatus, PortalRole } from "./authz.ts";
-import { blobTokenPresent, storageHealth } from "./blob-config.ts";
+import { blobStoreConfigured, storageHealth } from "./blob-config.ts";
 import { readPrivateBlob, deletePrivateBlob } from "./blob-io.ts";
 import { failPhoto, recordUploadFailure } from "./photo-store.ts";
 import { resolveUploadActor, assertUploader, loadAssignedEventIds } from "./upload-actor.ts";
@@ -65,7 +65,7 @@ export async function handlePortalUploadPost(request: Request): Promise<Response
     return json({ error: "Invalid request." }, 400);
   }
 
-  if (!blobTokenPresent()) {
+  if (!blobStoreConfigured()) {
     return json({ error: "Private object storage is not configured." }, 503);
   }
 

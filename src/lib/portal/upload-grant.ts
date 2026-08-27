@@ -3,7 +3,7 @@ import { canUploadToEvent, type PortalActor } from "./authz.ts";
 import {
   ALLOWED_UPLOAD_CONTENT_TYPES,
   BLOB_ACCESS,
-  blobTokenPresent,
+  blobStoreConfigured,
   HANDLE_UPLOAD_URL,
   requireBlobToken,
   tokenValidUntil,
@@ -51,7 +51,7 @@ export async function createUploadGrant(
   assignedEventIds: string[],
   input: PrepareInput,
 ) {
-  if (!blobTokenPresent()) {
+  if (!blobStoreConfigured()) {
     return { ok: false as const, code: "rejected" as const, message: "Private object storage is not configured." };
   }
   if (!canUploadToEvent(actor, assignedEventIds, input.eventId)) {

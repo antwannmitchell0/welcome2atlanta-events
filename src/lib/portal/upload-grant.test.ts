@@ -59,13 +59,23 @@ describe("storage health", () => {
   it("reports the token name as present or absent without a value", () => {
     const off = storageHealth({} as NodeJS.ProcessEnv);
     assert.equal(off.blobReadWriteToken, false);
+    assert.equal(off.configured, false);
     assert.equal(off.access, "private");
     assert.equal(JSON.stringify(off).includes("vercel_blob"), false);
     const secret = "test-not-a-real-token-value-xyz";
     const on = storageHealth({ BLOB_READ_WRITE_TOKEN: secret } as NodeJS.ProcessEnv);
     assert.equal(on.blobReadWriteToken, true);
+    assert.equal(on.configured, true);
     assert.equal(Object.keys(on).includes("blobReadWriteToken"), true);
     assert.equal(JSON.stringify(on).includes(secret), false);
+    const oidc = storageHealth({
+      BLOB_STORE_ID: "store_test",
+      VERCEL_OIDC_TOKEN: "oidc-test-not-a-real-token",
+    } as NodeJS.ProcessEnv);
+    assert.equal(oidc.blobReadWriteToken, false);
+    assert.equal(oidc.configured, true);
+    assert.equal(JSON.stringify(oidc).includes("oidc-test-not-a-real-token"), false);
+
   });
 });
 
