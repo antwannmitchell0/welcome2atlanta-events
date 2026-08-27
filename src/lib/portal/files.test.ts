@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { detectImageSignature, isDangerousUpload } from "./files.ts";
+import { claimedUploadExt, detectImageSignature, isDangerousUpload } from "./files.ts";
 
 describe("image signatures", () => {
   it("accepts jpeg magic", () => {
@@ -16,6 +16,13 @@ describe("image signatures", () => {
   it("rejects spoofed svg and executables", () => {
     assert.equal(isDangerousUpload("photo.svg", "image/svg+xml"), true);
     assert.equal(isDangerousUpload("ok.jpg", "image/jpeg"), false);
+    assert.equal(claimedUploadExt("ok.jpg.svg", "image/jpeg").ok, false);
+  });
+
+  it("rejects HEIC in this release", () => {
+    const claimed = claimedUploadExt("IMG_0001.HEIC", "image/heic");
+    assert.equal(claimed.ok, false);
+    if (!claimed.ok) assert.match(claimed.error, /HEIC/);
   });
 
   it("rejects random bytes", () => {

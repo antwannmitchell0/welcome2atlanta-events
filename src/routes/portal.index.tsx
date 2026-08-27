@@ -12,7 +12,7 @@ export const Route = createFileRoute("/portal/")({
 });
 
 function Dashboard() {
-  const data = Route.useLoaderData();
+  const data = Route.useLoaderData() as { events: GalleryEventRow[]; sampleCount: number };
   const rows = data.events;
 
   return (

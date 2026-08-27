@@ -7,7 +7,7 @@ export const Route = createFileRoute("/portal")({
   beforeLoad: async ({ location }) => {
     if (PUBLIC_PORTAL_PATHS.has(location.pathname)) return {};
     const me = await getPortalMe();
-    const decision = portalBeforeLoad(location.pathname, location.search, me);
+    const decision = portalBeforeLoad(location.pathname, location.searchStr, me);
     if (decision.kind === "login") {
       throw redirect({
         to: "/portal/login",

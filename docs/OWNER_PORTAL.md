@@ -17,13 +17,16 @@ Reset the owner password with `/portal/forgot-password` after `RESEND_API_KEY` i
 
 ## Future photographers
 
-`user_profile.role = photographer` and `event_assignment` are in the schema. Photographers have no UI in this phase. Server authorization rejects publish, event deletion, and unassigned-event access.
+`user_profile.role = photographer` and `event_assignment` are in the schema. Photographers have no UI in this phase. Server authorization rejects publish, event deletion, and unassigned-event access. Assigned photographers may receive upload tokens for their events.
 
 ## Storage and EXIF
 
-- Private store: Vercel Blob object keys only. Neon stores metadata, status and authorization — never original bytes or public JPEG derivatives.
+- Private store: Vercel Blob (`access: "private"`) object keys only. Neon stores metadata, status and authorization — never original bytes or public JPEG derivatives.
+- Browser uploads go to Blob with a short-lived token from `/api/portal/upload`. `BLOB_READ_WRITE_TOKEN` stays server-only.
+- Object keys are server-assigned: `events/{eventId}/{photoId}.{jpg|png|webp}`.
 - Public pages only receive `/api/media/:photoId` when the event is `published` and the photo is `ready` and not `hidden`.
-- Public derivatives are re-encoded JPEGs with EXIF stripped. Originals retain EXIF privately in Blob.
+- Public derivatives are EXIF-stripped. Originals retain EXIF privately in Blob.
+- HEIC/HEIF is **not supported** in this release. Convert to JPEG or PNG on the device first.
 
 ## Sample galleries
 
