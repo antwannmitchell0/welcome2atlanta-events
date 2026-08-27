@@ -4,12 +4,13 @@ import {
   ALLOWED_UPLOAD_CONTENT_TYPES,
   BLOB_ACCESS,
   blobStoreConfigured,
+  blobUploadMode,
   HANDLE_UPLOAD_URL,
   requireBlobToken,
   tokenValidUntil,
 } from "./blob-config.ts";
 import { MAX_UPLOAD_BYTES } from "./files.ts";
-import { completePhotoUpload, getPhoto, type PrepareInput, preparePhotoUpload } from "./photo-store.ts";
+import { completePhotoUpload, getPhoto, type DerivativeSink, type PrepareInput, preparePhotoUpload } from "./photo-store.ts";
 import type { SqlLike } from "./event-store.ts";
 import { assertAuthorizedPath } from "./storage-path.ts";
 import { assertCanUpload } from "./upload-actor.ts";
@@ -65,6 +66,7 @@ export async function createUploadGrant(
     pathname: prepared.pathname,
     handleUploadUrl: HANDLE_UPLOAD_URL,
     access: BLOB_ACCESS,
+    uploadMode: blobUploadMode(),
   };
 }
 
@@ -111,15 +113,46 @@ export function parseTokenPayload(raw: string | null | undefined): { photoId: st
 export async function finishConfirmedUpload(
   sql: SqlLike,
   input: { pathname: string; url: string; tokenPayload?: string | null; bytes: Uint8Array },
+  sink?: DerivativeSink,
 ) {
   const payload = parseTokenPayload(input.tokenPayload);
   if (input.pathname !== payload.storageKey) throw new Error("Storage path is not authorized.");
-  return completePhotoUpload(sql, {
-    photoId: payload.photoId,
-    pathname: input.pathname,
-    url: input.url,
-    bytes: input.bytes,
-  });
+  return completePhotoUpload(
+    sql,
+    {
+      photoId: payload.photoId,
+      pathname: input.pathname,
+      url: input.url,
+      bytes: input.bytes,
+    },
+    sink,
+  );
+}
+
+export async function completeOwnedUpload(
+  sql: SqlLike,
+  actor: PortalActor,
+  assignedEventIds: string[],
+  photoId: string,
+  readBytes: (pathname: string) => Promise<Uint8Array | null>,
+  sink?: DerivativeSink,
+) {
+  const photo = await getPhoto(sql, photoId);
+  if (!photo) throw new Error("Photo not found.");
+  assertCanUpload(actor, assignedEventIds, photo.event_id);
+  if (photo.upload_status === "ready") return { ok: true as const, status: photo.upload_status };
+  const bytes = await readBytes(photo.storage_key);
+  if (!bytes) throw new Error("Uploaded object was not found.");
+  return completePhotoUpload(
+    sql,
+    {
+      photoId: photo.id,
+      pathname: photo.storage_key,
+      url: `https://store.private.blob.vercel-storage.com/${photo.storage_key}`,
+      bytes,
+    },
+    sink,
+  );
 }
 
 export function isHandleUploadBody(body: unknown): body is HandleUploadBody {

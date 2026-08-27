@@ -8,9 +8,14 @@ import {
   detectImageSignature,
   MAX_UPLOAD_BYTES,
 } from "./files.ts";
-import { assertAuthorizedPath, assertPrivateBlobLocation, buildOriginalPath } from "./storage-path.ts";
+import { buildPublicDerivative } from "./image-process.ts";
+import { mediaUrl } from "./media-url.ts";
+import { assertAuthorizedPath, assertPrivateBlobLocation, buildDerivativePath, buildOriginalPath } from "./storage-path.ts";
+
+export { mediaUrl };
 
 export type PhotoStatus = "uploading" | "processing" | "ready" | "failed";
+export type DerivativeSink = (pathname: string, bytes: Uint8Array, contentType: string) => Promise<unknown>;
 
 export type GalleryPhotoRow = {
   id: string;
@@ -140,9 +145,35 @@ export async function getPhoto(sql: SqlLike, photoId: string): Promise<GalleryPh
   return rows[0] ?? null;
 }
 
+export async function getPhotoWithEvent(
+  sql: SqlLike,
+  photoId: string,
+): Promise<{ photo: GalleryPhotoRow; eventStatus: string } | null> {
+  const rows = await sql.query<GalleryPhotoRow & { event_status: string }>(
+    `select p.*, e.status as event_status
+     from gallery_photo p
+     join gallery_event e on e.id = p.event_id
+     where p.id = $1`,
+    [photoId],
+  );
+  const row = rows[0];
+  if (!row) return null;
+  const { event_status, ...photo } = row;
+  return { photo, eventStatus: event_status };
+}
+
 export async function listEventPhotos(sql: SqlLike, eventId: string): Promise<GalleryPhotoRow[]> {
   return sql.query<GalleryPhotoRow>(
     `select * from gallery_photo where event_id = $1 order by sort_order asc, created_at asc`,
+    [eventId],
+  );
+}
+
+export async function listPublicEventPhotos(sql: SqlLike, eventId: string): Promise<GalleryPhotoRow[]> {
+  return sql.query<GalleryPhotoRow>(
+    `select * from gallery_photo
+     where event_id = $1 and upload_status = 'ready' and hidden = false
+     order by sort_order asc, created_at asc`,
     [eventId],
   );
 }
@@ -173,7 +204,11 @@ export type CompleteInput = {
   bytes: Uint8Array;
 };
 
-export async function completePhotoUpload(sql: SqlLike, input: CompleteInput): Promise<{ ok: true; status: PhotoStatus }> {
+export async function completePhotoUpload(
+  sql: SqlLike,
+  input: CompleteInput,
+  sink?: DerivativeSink,
+): Promise<{ ok: true; status: PhotoStatus }> {
   const photo = await getPhoto(sql, input.photoId);
   if (!photo) throw new Error("Photo not found.");
   if (photo.upload_status === "ready") return { ok: true, status: "ready" };
@@ -190,10 +225,31 @@ export async function completePhotoUpload(sql: SqlLike, input: CompleteInput): P
 
     await sql.query(
       `update gallery_photo
-       set upload_status='ready', mime_type=$2, file_size=$3, checksum=$4,
+       set upload_status='processing', mime_type=$2, file_size=$3, checksum=$4,
            processing_error=null, updated_at=now()
        where id=$1`,
       [photo.id, detected.mime, input.bytes.byteLength, checksum],
+    );
+
+    const derivative = buildPublicDerivative(input.bytes);
+    const ext = derivative.mime === "image/png" ? "png" : derivative.mime === "image/webp" ? "webp" : "jpg";
+    const derivativeKey = buildDerivativePath(photo.event_id, photo.id, ext);
+    if (sink) await sink(derivativeKey, derivative.bytes, derivative.mime);
+
+    await sql.query(
+      `update gallery_photo
+       set upload_status='ready', mime_type=$2, file_size=$3, checksum=$4,
+           width=$5, height=$6, derivative_key=$7, processing_error=null, updated_at=now()
+       where id=$1`,
+      [
+        photo.id,
+        detected.mime,
+        input.bytes.byteLength,
+        checksum,
+        derivative.width,
+        derivative.height,
+        derivativeKey,
+      ],
     );
     return { ok: true, status: "ready" };
   } catch (err) {
@@ -209,4 +265,77 @@ export function publicMediaAllowed(eventStatus: string, photo: Pick<GalleryPhoto
     uploadStatus: photo.upload_status,
     hidden: photo.hidden,
   });
+}
+
+export async function setPhotoCover(sql: SqlLike, eventId: string, photoId: string) {
+  const photo = await getPhoto(sql, photoId);
+  if (!photo || photo.event_id !== eventId) throw new Error("Photo not found.");
+  if (photo.upload_status !== "ready" || photo.hidden) throw new Error("Cover photo must be a visible ready image.");
+  await sql.query(`update gallery_event set cover_photo_id=$2, updated_at=now() where id=$1`, [eventId, photoId]);
+  return { ok: true as const };
+}
+
+export async function setPhotoFlags(
+  sql: SqlLike,
+  photoId: string,
+  flags: { featured?: boolean; hidden?: boolean },
+) {
+  const photo = await getPhoto(sql, photoId);
+  if (!photo) throw new Error("Photo not found.");
+  const featured = flags.featured ?? photo.featured;
+  const hidden = flags.hidden ?? photo.hidden;
+  await sql.query(
+    `update gallery_photo set featured=$2, hidden=$3, updated_at=now() where id=$1`,
+    [photoId, featured, hidden],
+  );
+  if (hidden) {
+    await sql.query(
+      `update gallery_event set cover_photo_id=null, updated_at=now()
+       where id=$1 and cover_photo_id=$2`,
+      [photo.event_id, photoId],
+    );
+  }
+  return { ok: true as const, featured, hidden };
+}
+
+export async function reorderEventPhotos(sql: SqlLike, eventId: string, photoIds: string[]) {
+  const existing = await listEventPhotos(sql, eventId);
+  const allowed = new Set(existing.map((row) => row.id));
+  if (photoIds.length !== existing.length || photoIds.some((id) => !allowed.has(id))) {
+    throw new Error("Photo order is invalid.");
+  }
+  for (let i = 0; i < photoIds.length; i += 1) {
+    await sql.query(`update gallery_photo set sort_order=$2, updated_at=now() where id=$1`, [photoIds[i], i + 1]);
+  }
+  return { ok: true as const };
+}
+
+export async function deleteEventPhoto(
+  sql: SqlLike,
+  eventId: string,
+  photoId: string,
+  removeBlob?: (pathname: string) => Promise<void>,
+) {
+  const photo = await getPhoto(sql, photoId);
+  if (!photo || photo.event_id !== eventId) throw new Error("Photo not found.");
+  await sql.query(
+    `update gallery_event set cover_photo_id=null, updated_at=now() where id=$1 and cover_photo_id=$2`,
+    [eventId, photoId],
+  );
+  await sql.query(`delete from gallery_photo where id=$1`, [photoId]);
+  if (removeBlob) {
+    try {
+      await removeBlob(photo.storage_key);
+    } catch {
+      /* original may already be gone */
+    }
+    if (photo.derivative_key) {
+      try {
+        await removeBlob(photo.derivative_key);
+      } catch {
+        /* derivative may already be gone */
+      }
+    }
+  }
+  return { ok: true as const };
 }

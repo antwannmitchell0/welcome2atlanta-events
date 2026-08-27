@@ -74,7 +74,17 @@ describe("storage health", () => {
     } as NodeJS.ProcessEnv);
     assert.equal(oidc.blobReadWriteToken, false);
     assert.equal(oidc.configured, true);
+    assert.equal(oidc.uploadMode, "presigned");
     assert.equal(JSON.stringify(oidc).includes("oidc-test-not-a-real-token"), false);
+    const vercelStore = storageHealth({
+      BLOB_STORE_ID: "store_test",
+      VERCEL: "1",
+    } as NodeJS.ProcessEnv);
+    assert.equal(vercelStore.configured, true);
+    assert.equal(vercelStore.blobReadWriteToken, false);
+    assert.equal(vercelStore.uploadMode, "presigned");
+    assert.equal(vercelStore.access, "private");
+
 
   });
 });
@@ -137,6 +147,7 @@ describe("upload grants", () => {
     if (!grant.ok) return;
     assert.equal(grant.pathname, buildOriginalPath(created.id, grant.photoId, "jpg"));
     assert.equal(grant.access, "private");
+    assert.equal(grant.uploadMode === "client-token" || grant.uploadMode === "presigned", true);
     assert.equal("token" in grant, false);
 
     const denied = await createUploadGrant(sql, photographer, [], {

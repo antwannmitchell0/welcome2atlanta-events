@@ -27,8 +27,9 @@ import { Route as PortalForgotPasswordRouteImport } from './routes/portal.forgot
 import { Route as PortalLoginRouteImport } from './routes/portal.login'
 import { Route as PortalResetPasswordRouteImport } from './routes/portal.reset-password'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as ApiPortalUploadRouteImport } from './routes/api/portal.upload'
+import { Route as ApiMediaPhotoIdRouteImport } from './routes/api/media.$photoId'
 import { Route as ApiPortalStorageHealthRouteImport } from './routes/api/portal.storage-health'
+import { Route as ApiPortalUploadRouteImport } from './routes/api/portal.upload'
 import { Route as PortalEventsIdRouteImport } from './routes/portal.events.$id'
 import { Route as PortalEventsNewRouteImport } from './routes/portal.events.new'
 import { Route as PortalEventsIdEditRouteImport } from './routes/portal.events.$id.edit'
@@ -123,14 +124,19 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPortalUploadRoute = ApiPortalUploadRouteImport.update({
-  id: '/api/portal/upload',
-  path: '/api/portal/upload',
+const ApiMediaPhotoIdRoute = ApiMediaPhotoIdRouteImport.update({
+  id: '/api/media/$photoId',
+  path: '/api/media/$photoId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPortalStorageHealthRoute = ApiPortalStorageHealthRouteImport.update({
   id: '/api/portal/storage-health',
   path: '/api/portal/storage-health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPortalUploadRoute = ApiPortalUploadRouteImport.update({
+  id: '/api/portal/upload',
+  path: '/api/portal/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalEventsIdRoute = PortalEventsIdRouteImport.update({
@@ -168,8 +174,9 @@ export interface FileRoutesByFullPath {
   '/photos/': typeof PhotosIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/portal/upload': typeof ApiPortalUploadRoute
+  '/api/media/$photoId': typeof ApiMediaPhotoIdRoute
   '/api/portal/storage-health': typeof ApiPortalStorageHealthRoute
+  '/api/portal/upload': typeof ApiPortalUploadRoute
   '/portal/events/$id': typeof PortalEventsIdRouteWithChildren
   '/portal/events/new': typeof PortalEventsNewRoute
   '/portal/events/$id/edit': typeof PortalEventsIdEditRoute
@@ -192,8 +199,9 @@ export interface FileRoutesByTo {
   '/photos': typeof PhotosIndexRoute
   '/portal': typeof PortalIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/portal/upload': typeof ApiPortalUploadRoute
+  '/api/media/$photoId': typeof ApiMediaPhotoIdRoute
   '/api/portal/storage-health': typeof ApiPortalStorageHealthRoute
+  '/api/portal/upload': typeof ApiPortalUploadRoute
   '/portal/events/$id': typeof PortalEventsIdRouteWithChildren
   '/portal/events/new': typeof PortalEventsNewRoute
   '/portal/events/$id/edit': typeof PortalEventsIdEditRoute
@@ -218,8 +226,9 @@ export interface FileRoutesById {
   '/photos/': typeof PhotosIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/portal/upload': typeof ApiPortalUploadRoute
+  '/api/media/$photoId': typeof ApiMediaPhotoIdRoute
   '/api/portal/storage-health': typeof ApiPortalStorageHealthRoute
+  '/api/portal/upload': typeof ApiPortalUploadRoute
   '/portal/events/$id': typeof PortalEventsIdRouteWithChildren
   '/portal/events/new': typeof PortalEventsNewRoute
   '/portal/events/$id/edit': typeof PortalEventsIdEditRoute
@@ -245,8 +254,9 @@ export interface FileRouteTypes {
     | '/photos/'
     | '/portal/'
     | '/api/auth/$'
-    | '/api/portal/upload'
+    | '/api/media/$photoId'
     | '/api/portal/storage-health'
+    | '/api/portal/upload'
     | '/portal/events/$id'
     | '/portal/events/new'
     | '/portal/events/$id/edit'
@@ -269,8 +279,9 @@ export interface FileRouteTypes {
     | '/photos'
     | '/portal'
     | '/api/auth/$'
-    | '/api/portal/upload'
+    | '/api/media/$photoId'
     | '/api/portal/storage-health'
+    | '/api/portal/upload'
     | '/portal/events/$id'
     | '/portal/events/new'
     | '/portal/events/$id/edit'
@@ -294,8 +305,9 @@ export interface FileRouteTypes {
     | '/photos/'
     | '/portal/'
     | '/api/auth/$'
-    | '/api/portal/upload'
+    | '/api/media/$photoId'
     | '/api/portal/storage-health'
+    | '/api/portal/upload'
     | '/portal/events/$id'
     | '/portal/events/new'
     | '/portal/events/$id/edit'
@@ -316,8 +328,9 @@ export interface RootRouteChildren {
   EventsIndexRoute: typeof EventsIndexRoute
   PhotosIndexRoute: typeof PhotosIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  ApiPortalUploadRoute: typeof ApiPortalUploadRoute
+  ApiMediaPhotoIdRoute: typeof ApiMediaPhotoIdRoute
   ApiPortalStorageHealthRoute: typeof ApiPortalStorageHealthRoute
+  ApiPortalUploadRoute: typeof ApiPortalUploadRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -448,11 +461,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/portal/upload': {
-      id: '/api/portal/upload'
-      path: '/api/portal/upload'
-      fullPath: '/api/portal/upload'
-      preLoaderRoute: typeof ApiPortalUploadRouteImport
+    '/api/media/$photoId': {
+      id: '/api/media/$photoId'
+      path: '/api/media/$photoId'
+      fullPath: '/api/media/$photoId'
+      preLoaderRoute: typeof ApiMediaPhotoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/portal/storage-health': {
@@ -460,6 +473,13 @@ declare module '@tanstack/react-router' {
       path: '/api/portal/storage-health'
       fullPath: '/api/portal/storage-health'
       preLoaderRoute: typeof ApiPortalStorageHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/portal/upload': {
+      id: '/api/portal/upload'
+      path: '/api/portal/upload'
+      fullPath: '/api/portal/upload'
+      preLoaderRoute: typeof ApiPortalUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal/events/$id': {
@@ -534,9 +554,19 @@ const rootRouteChildren: RootRouteChildren = {
   EventsIndexRoute: EventsIndexRoute,
   PhotosIndexRoute: PhotosIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  ApiPortalUploadRoute: ApiPortalUploadRoute,
+  ApiMediaPhotoIdRoute: ApiMediaPhotoIdRoute,
   ApiPortalStorageHealthRoute: ApiPortalStorageHealthRoute,
+  ApiPortalUploadRoute: ApiPortalUploadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

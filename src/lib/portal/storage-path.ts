@@ -13,9 +13,9 @@ export function buildOriginalPath(eventId: string, photoId: string, ext: UploadE
   return `events/${eventId}/${photoId}.${ext}`;
 }
 
-export function buildDerivativePath(eventId: string, photoId: string): string {
+export function buildDerivativePath(eventId: string, photoId: string, ext: UploadExt = "jpg"): string {
   if (!isUuid(eventId) || !isUuid(photoId)) throw new Error("Invalid storage path.");
-  return `events/${eventId}/${photoId}.public.jpg`;
+  return `events/${eventId}/${photoId}.public.${ext}`;
 }
 
 export function parseOriginalPath(pathname: string): { eventId: string; photoId: string; ext: UploadExt } | null {

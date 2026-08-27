@@ -1,16 +1,28 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { issueSignedToken, presignUrl } from "@vercel/blob";
 import type { AccountStatus, PortalRole } from "./authz.ts";
-import { blobStoreConfigured, storageHealth } from "./blob-config.ts";
-import { readPrivateBlob, deletePrivateBlob } from "./blob-io.ts";
-import { failPhoto, recordUploadFailure } from "./photo-store.ts";
+import {
+  ALLOWED_UPLOAD_CONTENT_TYPES,
+  BLOB_ACCESS,
+  blobStoreConfigured,
+  blobTokenPresent,
+  blobUploadMode,
+  storageHealthWithOidc,
+  tokenValidUntil,
+} from "./blob-config.ts";
+import { MAX_UPLOAD_BYTES } from "./files.ts";
+import { readPrivateBlob, deletePrivateBlob, putPrivateBlob } from "./blob-io.ts";
+import { failPhoto, getPhoto, recordUploadFailure } from "./photo-store.ts";
 import { resolveUploadActor, assertUploader, loadAssignedEventIds } from "./upload-actor.ts";
 import {
   authorizeClientPath,
+  completeOwnedUpload,
   createUploadGrant,
   finishConfirmedUpload,
   isHandleUploadBody,
 } from "./upload-grant.ts";
 import { parseTokenPayload } from "./upload-grant.ts";
+import { assertCanUpload } from "./upload-actor.ts";
 
 async function sql() {
   const { getSql } = await import("@/lib/db");
@@ -45,8 +57,8 @@ function errorStatus(message: string): number {
   return 400;
 }
 
-export function storageHealthResponse() {
-  return json(storageHealth());
+export async function storageHealthResponse() {
+  return json(await storageHealthWithOidc());
 }
 
 export async function handlePortalUploadPost(request: Request): Promise<Response> {
@@ -60,6 +72,12 @@ export async function handlePortalUploadPost(request: Request): Promise<Response
   if (body && typeof body === "object" && (body as { intent?: unknown }).intent === "prepare") {
     return handlePrepare(body);
   }
+  if (body && typeof body === "object" && (body as { intent?: unknown }).intent === "presign") {
+    return handlePresign(body);
+  }
+  if (body && typeof body === "object" && (body as { intent?: unknown }).intent === "complete") {
+    return handleComplete(body);
+  }
 
   if (!isHandleUploadBody(body)) {
     return json({ error: "Invalid request." }, 400);
@@ -67,6 +85,9 @@ export async function handlePortalUploadPost(request: Request): Promise<Response
 
   if (!blobStoreConfigured()) {
     return json({ error: "Private object storage is not configured." }, 503);
+  }
+  if (!blobTokenPresent()) {
+    return json({ error: "Use the presigned upload path for this store." }, 400);
   }
 
   try {
@@ -85,12 +106,16 @@ export async function handlePortalUploadPost(request: Request): Promise<Response
         try {
           const bytes = await readPrivateBlob(blob.pathname);
           if (!bytes) throw new Error("Uploaded object was not found.");
-          await finishConfirmedUpload(db, {
-            pathname: blob.pathname,
-            url: blob.url,
-            tokenPayload,
-            bytes,
-          });
+          await finishConfirmedUpload(
+            db,
+            {
+              pathname: blob.pathname,
+              url: blob.url,
+              tokenPayload,
+              bytes,
+            },
+            putPrivateBlob,
+          );
         } catch (err) {
           const message = err instanceof Error ? err.message : "Upload failed.";
           try {
@@ -150,6 +175,7 @@ async function handlePrepare(body: unknown): Promise<Response> {
       pathname: grant.pathname,
       handleUploadUrl: grant.handleUploadUrl,
       access: grant.access,
+      uploadMode: grant.uploadMode,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Upload rejected.";
@@ -163,6 +189,76 @@ async function handlePrepare(body: unknown): Promise<Response> {
       } catch {
         /* ignore */
       }
+    }
+    return json({ error: message }, errorStatus(message));
+  }
+}
+
+async function handlePresign(body: unknown): Promise<Response> {
+  const photoId = String((body as { photoId?: unknown }).photoId ?? "");
+  const { result } = await currentUploader();
+  try {
+    const actor = assertUploader(result);
+    if (!blobStoreConfigured()) {
+      return json({ error: "Private object storage is not configured." }, 503);
+    }
+    const db = await sql();
+    const assigned = await loadAssignedEventIds(db, actor.userId);
+    const photo = await getPhoto(db, photoId);
+    if (!photo) return json({ error: "Photo not found." }, 404);
+    assertCanUpload(actor, assigned, photo.event_id);
+    const options = await authorizeClientPath(
+      db,
+      actor,
+      assigned,
+      photo.storage_key,
+      JSON.stringify({ photoId: photo.id }),
+    );
+    const issued = await issueSignedToken({
+      pathname: photo.storage_key,
+      operations: ["put"],
+      validUntil: options.validUntil,
+      allowedContentTypes: ALLOWED_UPLOAD_CONTENT_TYPES,
+      maximumSizeInBytes: MAX_UPLOAD_BYTES,
+    });
+    const { presignedUrl } = await presignUrl(issued, {
+      operation: "put",
+      pathname: photo.storage_key,
+      access: BLOB_ACCESS,
+      allowedContentTypes: ALLOWED_UPLOAD_CONTENT_TYPES,
+      maximumSizeInBytes: MAX_UPLOAD_BYTES,
+      allowOverwrite: false,
+      addRandomSuffix: false,
+      validUntil: tokenValidUntil(),
+    });
+    return json({
+      photoId: photo.id,
+      pathname: photo.storage_key,
+      presignedUrl,
+      access: BLOB_ACCESS,
+      uploadMode: blobUploadMode(),
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Upload rejected.";
+    return json({ error: message }, errorStatus(message));
+  }
+}
+
+async function handleComplete(body: unknown): Promise<Response> {
+  const photoId = String((body as { photoId?: unknown }).photoId ?? "");
+  const { result } = await currentUploader();
+  try {
+    const actor = assertUploader(result);
+    const db = await sql();
+    const assigned = await loadAssignedEventIds(db, actor.userId);
+    const saved = await completeOwnedUpload(db, actor, assigned, photoId, readPrivateBlob, putPrivateBlob);
+    return json({ ok: true, status: saved.status });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Upload failed.";
+    try {
+      if (photoId) await failPhoto(await sql(), photoId, message);
+    } catch {
+      /* ignore */
     }
     return json({ error: message }, errorStatus(message));
   }
