@@ -1,16 +1,25 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, Camera, MapPin, Calendar } from "lucide-react";
-import { getEvent } from "@/lib/events";
 import { reelFrames } from "@/lib/reel";
+import { getPublicGallery, type PublicGalleryPhoto } from "@/lib/portal/public-galleries";
 
 export const Route = createFileRoute("/events/$slug")({
+  loader: async ({ params }) => {
+    const gallery = await getPublicGallery({ data: { slug: params.slug } });
+    if (!gallery) throw notFound();
+    return gallery;
+  },
   component: EventPage,
 });
 
 function EventPage() {
-  const { slug } = Route.useParams();
-  const event = getEvent(slug);
-  if (!event) throw notFound();
+  const { kind, event, photos } = Route.useLoaderData();
+  const sampleSources =
+    kind === "sample"
+      ? [event.image, ...reelFrames.map((frame) => frame.src)].filter((src, i, arr) => arr.indexOf(src) === i).slice(0, 8)
+      : [];
+  const dbSources = kind === "database" ? photos : [];
+  const showGallery = event.photoCount > 0;
 
   return (
     <div className="min-h-screen bg-bg text-fg">
@@ -63,21 +72,24 @@ function EventPage() {
           </Link>
         ) : null}
 
-        {event.photoCount > 0 ? (
+        {showGallery ? (
           <div className="mt-12">
             <div className="mb-5 flex items-end justify-between">
               <h2 className="font-display text-2xl">Gallery</h2>
               <p className="text-sm text-subtle">{event.photoCount.toLocaleString()} moments</p>
             </div>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-              {[event.image, ...reelFrames.map((frame) => frame.src)]
-                .filter((src, i, arr) => arr.indexOf(src) === i)
-                .slice(0, 8)
-                .map((src) => (
-                  <div key={src} className="overflow-hidden rounded-lg bg-elevated">
-                    <img src={src} alt="" className="aspect-[4/5] w-full object-cover" />
-                  </div>
-                ))}
+              {kind === "sample"
+                ? sampleSources.map((src) => (
+                    <div key={src} className="overflow-hidden rounded-lg bg-elevated">
+                      <img src={src} alt="" className="aspect-[4/5] w-full object-cover" />
+                    </div>
+                  ))
+                : dbSources.map((photo: PublicGalleryPhoto) => (
+                    <div key={photo.id} className="overflow-hidden rounded-lg bg-elevated">
+                      <img src={photo.src} alt="" className="aspect-[4/5] w-full object-cover" />
+                    </div>
+                  ))}
             </div>
           </div>
         ) : (

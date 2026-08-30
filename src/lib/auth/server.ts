@@ -36,7 +36,7 @@ import { getCookie } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
 import { ensureDbReady, getPglite } from "../db";
-import { emailAndPasswordEnabled } from "./email-password";
+import { emailAndPasswordEnabled, emailPasswordConfig } from "./email-password";
 import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
 import { pgliteDialect } from "./pglite-dialect";
@@ -103,27 +103,52 @@ const LOCAL_DEV_ORIGINS: string[] = [
   "http://127.0.0.1:8080",
   "http://[::1]:8080",
 ];
-const baseURL = explicitBaseURL ?? {
-  // Include loopback hosts so dynamic baseURL resolves for local email/password
-  // (not only the preview wildcard).
-  allowedHosts: [...previewAllowedHosts, "localhost", "127.0.0.1", "[::1]"],
-  // `auto` → trust both http:// and https:// expansions of allowedHosts
-  // (preview is https; local dev is http).
+const VERCEL_PREVIEW_HOSTS: string[] = ["*.vercel.app"];
+const WTAE_PUBLIC_HOSTS: string[] = [
+  "www.welcome2atlantaevents.com",
+  "welcome2atlantaevents.com",
+];
+const WTAE_PUBLIC_ORIGINS: string[] = WTAE_PUBLIC_HOSTS.map((host) => `https://${host}`);
+
+function hostFromUrl(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return undefined;
+  }
+}
+
+const explicitHost = hostFromUrl(explicitBaseURL);
+
+// Always derive origin from the request host so owner login works on the custom
+// domain, Vercel aliases, and Preview. A string BETTER_AUTH_URL alone would pin
+// cookies/callbacks to one host and reject the other.
+const baseURL = {
+  allowedHosts: [
+    ...previewAllowedHosts,
+    ...VERCEL_PREVIEW_HOSTS,
+    ...WTAE_PUBLIC_HOSTS,
+    "localhost",
+    "127.0.0.1",
+    "[::1]",
+    ...(explicitHost ? [explicitHost] : []),
+  ],
   protocol: "auto" as const,
-  fallback: "http://localhost:8080",
+  fallback: explicitBaseURL ?? "https://www.welcome2atlantaevents.com",
 };
 
 // Origins Better Auth accepts on credentialed POSTs (sign-up/sign-in, etc.).
 // Missing entries here surface as FORBIDDEN "Invalid origin".
-const trustedOrigins: string[] = explicitBaseURL
-  ? [explicitBaseURL, ...LOCAL_DEV_ORIGINS]
-  : [
-      // Host wildcards (matched against Origin's host)
-      ...previewAllowedHosts,
-      // Full-origin wildcards (matched against Origin)
-      ...previewAllowedHosts.flatMap((host) => [`https://${host}`, `http://${host}`]),
-      ...LOCAL_DEV_ORIGINS,
-    ];
+const trustedOrigins: string[] = [
+  ...WTAE_PUBLIC_ORIGINS,
+  ...LOCAL_DEV_ORIGINS,
+  ...previewAllowedHosts,
+  ...VERCEL_PREVIEW_HOSTS,
+  ...previewAllowedHosts.flatMap((host) => [`https://${host}`, `http://${host}`]),
+  "https://*.vercel.app",
+  ...(explicitBaseURL ? [explicitBaseURL] : []),
+];
 
 const databaseUrl = env("DATABASE_URL");
 
@@ -211,7 +236,12 @@ export const auth = betterAuth({
   session: { cookieCache: { enabled: true, maxAge: 300 } },
 
   // Local email/password — toggled only via `./email-password` (not a plugin).
-  ...(emailAndPasswordEnabled ? { emailAndPassword: { enabled: true } } : {}),
+  ...(emailAndPasswordEnabled ? { emailAndPassword: emailPasswordConfig } : {}),
+  rateLimit: {
+    enabled: true,
+    window: 60,
+    max: 8,
+  },
 
   // `__Host-` prefixed cookies: the browser REFUSES any same-named cookie that
   // carries a `Domain` attribute, so a sibling `*.grok.me` app cannot "toss" a
