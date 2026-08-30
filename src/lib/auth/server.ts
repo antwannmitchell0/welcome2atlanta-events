@@ -48,6 +48,7 @@ import {
 } from "./preview";
 
 // Kick (and share) PGLite bootstrap as soon as the auth server module loads.
+// On Vercel without DATABASE_URL this is a no-op — never boot PGLite there.
 void ensureDbReady();
 
 /**
@@ -69,6 +70,13 @@ const env = (key: string): string | undefined => {
   const value = process.env[key]?.trim();
   return value ? value : undefined;
 };
+
+// Static reads so Nitro keeps live-site auth/database names in the server env.
+void process.env.DATABASE_URL;
+void process.env.BETTER_AUTH_SECRET;
+void process.env.BETTER_AUTH_URL;
+void process.env.WTAE_OWNER_EMAIL;
+void process.env.VERCEL;
 
 // Explicit off-switch. The deployer sets `VITE_AUTH_ENABLED=true` when it
 // provisions auth; set it to "false" to force auth off everywhere (dev user).
@@ -151,6 +159,7 @@ const trustedOrigins: string[] = [
 ];
 
 const databaseUrl = env("DATABASE_URL");
+const onVercel = Boolean(env("VERCEL"));
 
 // Static broker OAuth endpoints (skip OIDC discovery on every sign-in / callback).
 // Discovery would cost an extra network hop to the broker before the popup can
@@ -166,9 +175,13 @@ const grokUserInfoUrl = `${issuerBase}/api/auth/oauth2/userinfo`;
 // SAME DB as app data, including email/password users. Both use the Better Auth
 // schema from `migrations/auth/0001_auth.sql`, copied into `migrations/` when
 // the app turns sign-in on.
+// On Vercel, never construct the PGLite dialect — the WASM image is missing and
+// would crash sign-in with a 500 that looked like a bad password.
 const database = databaseUrl
   ? new Pool({ connectionString: databaseUrl })
-  : { dialect: pgliteDialect(() => getPglite()), type: "postgres" as const };
+  : onVercel
+    ? new Pool({ connectionString: "postgresql://127.0.0.1:1/unconfigured" })
+    : { dialect: pgliteDialect(() => getPglite()), type: "postgres" as const };
 
 /** Session token cookie name — also read by the live-preview popup completion page. */
 export const SESSION_TOKEN_COOKIE = "__Host-grok-auth.session_token";

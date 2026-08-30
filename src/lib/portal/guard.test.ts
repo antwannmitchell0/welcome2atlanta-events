@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { INVALID_LOGIN_MESSAGE, portalBeforeLoad } from "./guard.ts";
+import {
+  INVALID_LOGIN_MESSAGE,
+  LOGIN_NOT_READY_MESSAGE,
+  LOGIN_UNAVAILABLE_MESSAGE,
+  portalBeforeLoad,
+} from "./guard.ts";
 import type { PortalActor } from "./authz.ts";
 
 const owner: PortalActor = {
@@ -54,7 +59,11 @@ describe("portal session guard", () => {
     if (result.kind === "login") assert.equal(result.next, "/portal");
   });
 
-  it("uses a generic invalid-login message", () => {
+  it("keeps credential failures distinct from a site that is not ready", () => {
     assert.equal(INVALID_LOGIN_MESSAGE, "Invalid email or password.");
+    assert.match(LOGIN_NOT_READY_MESSAGE, /not an email or password/i);
+    assert.match(LOGIN_NOT_READY_MESSAGE, /does not use Resend/i);
+    assert.match(LOGIN_UNAVAILABLE_MESSAGE, /temporarily unavailable/i);
   });
 });
+

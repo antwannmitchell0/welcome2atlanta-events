@@ -3,11 +3,34 @@
 Public site: https://www.welcome2atlantaevents.com  
 Owner login: https://www.welcome2atlantaevents.com/portal/login
 
-Public signup is disabled. There is no Register button.
+Public signup is disabled. There is no Register button. **Resend is not required to sign in.** Forgot-password mail is the only thing that uses Resend.
 
-## First-owner provisioning
+## Login database (required)
 
-Create the first owner in a secure shell:
+Owner login stores accounts in Neon Postgres. Saving an email in Vercel does **not** create a login by itself.
+
+Connect Neon on the live project:
+
+1. Open the Vercel project **welcome2atlanta-events**.
+2. Open **Storage**.
+3. Create or install **Neon** (Create New Neon Account is fine).
+4. **Connect Project** → choose **welcome2atlanta-events**.
+5. Turn on **Production** and **Preview**.
+6. Click **Connect**. That injects `DATABASE_URL`.
+7. Wait for the site to finish updating.
+
+Also set these on Production and Preview (Settings → Environment Variables):
+
+- `WTAE_OWNER_EMAIL` — the email you will type on the login page
+- `BETTER_AUTH_SECRET` — a long random secret (do not reuse a password)
+
+Do **not** put `WTAE_OWNER_PASSWORD` in Vercel. Do **not** wait on Resend.
+
+## First owner
+
+After the database is connected, open `/portal/login`. If no owner exists yet, the first matching `WTAE_OWNER_EMAIL` plus a password of at least 10 characters **creates** the owner account. After that, the same form is regular sign-in.
+
+The shell script is still available:
 
 ```bash
 export DATABASE_URL="postgresql://..."

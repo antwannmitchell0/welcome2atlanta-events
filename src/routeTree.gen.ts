@@ -28,6 +28,8 @@ import { Route as PortalLoginRouteImport } from './routes/portal.login'
 import { Route as PortalResetPasswordRouteImport } from './routes/portal.reset-password'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiMediaPhotoIdRouteImport } from './routes/api/media.$photoId'
+import { Route as ApiPortalClaimOwnerRouteImport } from './routes/api/portal.claim-owner'
+import { Route as ApiPortalLoginHealthRouteImport } from './routes/api/portal.login-health'
 import { Route as ApiPortalStorageHealthRouteImport } from './routes/api/portal.storage-health'
 import { Route as ApiPortalUploadRouteImport } from './routes/api/portal.upload'
 import { Route as PortalEventsIdRouteImport } from './routes/portal.events.$id'
@@ -129,6 +131,16 @@ const ApiMediaPhotoIdRoute = ApiMediaPhotoIdRouteImport.update({
   path: '/api/media/$photoId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPortalClaimOwnerRoute = ApiPortalClaimOwnerRouteImport.update({
+  id: '/api/portal/claim-owner',
+  path: '/api/portal/claim-owner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPortalLoginHealthRoute = ApiPortalLoginHealthRouteImport.update({
+  id: '/api/portal/login-health',
+  path: '/api/portal/login-health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPortalStorageHealthRoute = ApiPortalStorageHealthRouteImport.update({
   id: '/api/portal/storage-health',
   path: '/api/portal/storage-health',
@@ -175,6 +187,8 @@ export interface FileRoutesByFullPath {
   '/portal/': typeof PortalIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/media/$photoId': typeof ApiMediaPhotoIdRoute
+  '/api/portal/claim-owner': typeof ApiPortalClaimOwnerRoute
+  '/api/portal/login-health': typeof ApiPortalLoginHealthRoute
   '/api/portal/storage-health': typeof ApiPortalStorageHealthRoute
   '/api/portal/upload': typeof ApiPortalUploadRoute
   '/portal/events/$id': typeof PortalEventsIdRouteWithChildren
@@ -200,6 +214,8 @@ export interface FileRoutesByTo {
   '/portal': typeof PortalIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/media/$photoId': typeof ApiMediaPhotoIdRoute
+  '/api/portal/claim-owner': typeof ApiPortalClaimOwnerRoute
+  '/api/portal/login-health': typeof ApiPortalLoginHealthRoute
   '/api/portal/storage-health': typeof ApiPortalStorageHealthRoute
   '/api/portal/upload': typeof ApiPortalUploadRoute
   '/portal/events/$id': typeof PortalEventsIdRouteWithChildren
@@ -227,6 +243,8 @@ export interface FileRoutesById {
   '/portal/': typeof PortalIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/media/$photoId': typeof ApiMediaPhotoIdRoute
+  '/api/portal/claim-owner': typeof ApiPortalClaimOwnerRoute
+  '/api/portal/login-health': typeof ApiPortalLoginHealthRoute
   '/api/portal/storage-health': typeof ApiPortalStorageHealthRoute
   '/api/portal/upload': typeof ApiPortalUploadRoute
   '/portal/events/$id': typeof PortalEventsIdRouteWithChildren
@@ -255,6 +273,8 @@ export interface FileRouteTypes {
     | '/portal/'
     | '/api/auth/$'
     | '/api/media/$photoId'
+    | '/api/portal/claim-owner'
+    | '/api/portal/login-health'
     | '/api/portal/storage-health'
     | '/api/portal/upload'
     | '/portal/events/$id'
@@ -280,6 +300,8 @@ export interface FileRouteTypes {
     | '/portal'
     | '/api/auth/$'
     | '/api/media/$photoId'
+    | '/api/portal/claim-owner'
+    | '/api/portal/login-health'
     | '/api/portal/storage-health'
     | '/api/portal/upload'
     | '/portal/events/$id'
@@ -306,6 +328,8 @@ export interface FileRouteTypes {
     | '/portal/'
     | '/api/auth/$'
     | '/api/media/$photoId'
+    | '/api/portal/claim-owner'
+    | '/api/portal/login-health'
     | '/api/portal/storage-health'
     | '/api/portal/upload'
     | '/portal/events/$id'
@@ -329,6 +353,8 @@ export interface RootRouteChildren {
   PhotosIndexRoute: typeof PhotosIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiMediaPhotoIdRoute: typeof ApiMediaPhotoIdRoute
+  ApiPortalClaimOwnerRoute: typeof ApiPortalClaimOwnerRoute
+  ApiPortalLoginHealthRoute: typeof ApiPortalLoginHealthRoute
   ApiPortalStorageHealthRoute: typeof ApiPortalStorageHealthRoute
   ApiPortalUploadRoute: typeof ApiPortalUploadRoute
 }
@@ -468,6 +494,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMediaPhotoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/portal/claim-owner': {
+      id: '/api/portal/claim-owner'
+      path: '/api/portal/claim-owner'
+      fullPath: '/api/portal/claim-owner'
+      preLoaderRoute: typeof ApiPortalClaimOwnerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/portal/login-health': {
+      id: '/api/portal/login-health'
+      path: '/api/portal/login-health'
+      fullPath: '/api/portal/login-health'
+      preLoaderRoute: typeof ApiPortalLoginHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/portal/storage-health': {
       id: '/api/portal/storage-health'
       path: '/api/portal/storage-health'
@@ -555,18 +595,11 @@ const rootRouteChildren: RootRouteChildren = {
   PhotosIndexRoute: PhotosIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiMediaPhotoIdRoute: ApiMediaPhotoIdRoute,
+  ApiPortalClaimOwnerRoute: ApiPortalClaimOwnerRoute,
+  ApiPortalLoginHealthRoute: ApiPortalLoginHealthRoute,
   ApiPortalStorageHealthRoute: ApiPortalStorageHealthRoute,
   ApiPortalUploadRoute: ApiPortalUploadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
