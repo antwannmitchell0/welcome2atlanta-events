@@ -24,5 +24,7 @@ describe("owner email/password config", () => {
       /\.\.\.\(emailAndPasswordEnabled \? \{ emailAndPassword: emailPasswordConfig \} : \{\}\)/,
     );
     assert.doesNotMatch(server, /magicLink/);
+    assert.match(server, /www\.welcome2atlantaevents\.com/);
+    assert.match(server, /welcome2atlantaevents\.com/);
   });
 });

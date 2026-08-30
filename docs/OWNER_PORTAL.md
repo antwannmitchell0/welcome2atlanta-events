@@ -1,8 +1,13 @@
 # WTAE owner portal
 
+Public site: https://www.welcome2atlantaevents.com  
+Owner login: https://www.welcome2atlantaevents.com/portal/login
+
+Public signup is disabled. There is no Register button.
+
 ## First-owner provisioning
 
-Public signup is disabled. Create the first owner in a secure shell:
+Create the first owner in a secure shell:
 
 ```bash
 export DATABASE_URL="postgresql://..."
