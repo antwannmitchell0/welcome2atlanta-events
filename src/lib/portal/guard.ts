@@ -9,6 +9,10 @@ export const PUBLIC_PORTAL_PATHS = new Set([
 ]);
 
 export const INVALID_LOGIN_MESSAGE = "Invalid email or password.";
+export const LOGIN_NOT_READY_MESSAGE =
+  "Owner login isn't ready yet. This is not an email or password problem, and it does not use Resend.";
+export const LOGIN_UNAVAILABLE_MESSAGE =
+  "Sign-in is temporarily unavailable. Try again in a moment.";
 
 export type PortalGuardResult =
   | { kind: "public" }

@@ -1,6 +1,8 @@
 /**
  * Local email/password sign-in. Public registration stays disabled.
- * First owner is created by scripts/provision-owner.mjs.
+ * First owner is claimed at /portal/login when WTAE_OWNER_EMAIL matches and
+ * no owner exists yet. scripts/provision-owner.mjs remains the shell fallback.
+ * Resend is only for forgot-password mail — sign-in does not use it.
  */
 export const emailAndPasswordEnabled = true;
 

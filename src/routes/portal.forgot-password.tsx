@@ -35,6 +35,9 @@ function ForgotPassword() {
     <main className="grid min-h-screen place-items-center bg-bg px-5 text-fg">
       <div className="w-full max-w-sm space-y-5">
         <h1 className="font-display text-4xl">Forgot password</h1>
+        <p className="text-sm text-muted">
+          Reset mail needs Resend. Regular owner sign-in does not.
+        </p>
         {sent ? (
           <p className="text-muted">
             If that account exists and mail is configured, a reset link is on the way.
