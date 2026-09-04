@@ -1,5 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, Camera, MapPin, Calendar } from "lucide-react";
+import { ShareSheet } from "@/components/share-sheet";
+import { WatermarkedPhoto } from "@/components/watermarked-photo";
+import { publicStatusLabel } from "@/lib/events";
 import { reelFrames } from "@/lib/reel";
 import { getPublicGallery, type PublicGalleryPhoto } from "@/lib/portal/public-galleries";
 
@@ -18,8 +21,13 @@ function EventPage() {
     kind === "sample"
       ? [event.image, ...reelFrames.map((frame) => frame.src)].filter((src, i, arr) => arr.indexOf(src) === i).slice(0, 8)
       : [];
-  const dbSources = kind === "database" ? photos : [];
+  const dbSources: PublicGalleryPhoto[] = kind === "database" ? photos : [];
   const showGallery = event.photoCount > 0;
+  const label = publicStatusLabel(event);
+  const shareFrames =
+    kind === "sample"
+      ? sampleSources.map((src, index) => ({ id: `${event.code}-${index}`, src }))
+      : dbSources.map((photo) => ({ id: photo.id, src: photo.src }));
 
   return (
     <div className="min-h-screen bg-bg text-fg">
@@ -33,17 +41,21 @@ function EventPage() {
       </header>
       <main className="mx-auto max-w-6xl px-5 py-12">
         <div className="overflow-hidden rounded-xl border border-border">
-          <img src={event.image} alt="" className="h-64 w-full object-cover md:h-80" />
+          <WatermarkedPhoto
+            src={event.image}
+            neighborhood={event.neighborhood}
+            className="h-64 w-full object-cover md:h-80"
+          />
         </div>
         <p
           className={
-            event.status === "live"
+            label === "LIVE"
               ? "mt-6 inline-flex items-center gap-1.5 text-xs font-medium tracking-wide text-live"
               : "mt-6 inline-flex items-center gap-1.5 text-xs font-medium tracking-wide text-accent"
           }
         >
-          {event.status === "live" ? <span className="size-1.5 rounded-full bg-live" /> : null}
-          {event.status.toUpperCase()}
+          {label === "LIVE" ? <span className="size-1.5 rounded-full bg-live" /> : null}
+          {label}
         </p>
         <h1 className="mt-2 font-display text-4xl md:text-5xl">{event.title}</h1>
         <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
@@ -66,6 +78,7 @@ function EventPage() {
         {event.photoCount > 0 ? (
           <Link
             to="/photos"
+            search={{ code: event.code }}
             className="mt-8 inline-flex h-12 items-center rounded-full bg-accent px-6 font-semibold text-accent-fg"
           >
             Find My Photos in This Gallery
@@ -81,16 +94,17 @@ function EventPage() {
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
               {kind === "sample"
                 ? sampleSources.map((src) => (
-                    <div key={src} className="overflow-hidden rounded-lg bg-elevated">
-                      <img src={src} alt="" className="aspect-[4/5] w-full object-cover" />
+                    <div key={src} className="overflow-hidden rounded-lg">
+                      <WatermarkedPhoto src={src} neighborhood={event.neighborhood} />
                     </div>
                   ))
                 : dbSources.map((photo: PublicGalleryPhoto) => (
-                    <div key={photo.id} className="overflow-hidden rounded-lg bg-elevated">
-                      <img src={photo.src} alt="" className="aspect-[4/5] w-full object-cover" />
+                    <div key={photo.id} className="overflow-hidden rounded-lg">
+                      <WatermarkedPhoto src={photo.src} neighborhood={event.neighborhood} />
                     </div>
                   ))}
             </div>
+            <ShareSheet neighborhood={event.neighborhood} code={event.code} frames={shareFrames} />
           </div>
         ) : (
           <div className="mt-12 rounded-xl border border-border bg-surface py-16 text-center">

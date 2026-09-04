@@ -11,6 +11,8 @@ export type EventRecord = {
   photoCount: number;
   image: string;
   code: string;
+  /** Static sample galleries. Never shown as LIVE without a PREVIEW label. */
+  demo?: boolean;
 };
 
 export const events: EventRecord[] = [
@@ -26,6 +28,7 @@ export const events: EventRecord[] = [
     photoCount: 968,
     image: "/events/404-after-dark.jpg",
     code: "ATL-404",
+    demo: true,
   },
   {
     slug: "o4w-jazz",
@@ -39,6 +42,7 @@ export const events: EventRecord[] = [
     photoCount: 412,
     image: "/events/o4w-jazz.jpg",
     code: "ATL-O4W",
+    demo: true,
   },
   {
     slug: "beltline-sunset",
@@ -52,6 +56,7 @@ export const events: EventRecord[] = [
     photoCount: 734,
     image: "/events/beltline.jpg",
     code: "ATL-BELT",
+    demo: true,
   },
   {
     slug: "invest-fest",
@@ -65,6 +70,7 @@ export const events: EventRecord[] = [
     photoCount: 1847,
     image: "/events/invest-fest.jpg",
     code: "ATL-INVEST",
+    demo: true,
   },
   {
     slug: "wtae-launch",
@@ -78,6 +84,7 @@ export const events: EventRecord[] = [
     photoCount: 312,
     image: "/events/wtae-launch.jpg",
     code: "ATL-WTAE",
+    demo: true,
   },
   {
     slug: "welcome-atl",
@@ -91,6 +98,7 @@ export const events: EventRecord[] = [
     photoCount: 0,
     image: "/events/welcome-atl.jpg",
     code: "ATL-WELCOME",
+    demo: true,
   },
 ];
 
@@ -105,4 +113,9 @@ export function getEventByCode(raw: string) {
   const code = raw.trim().toUpperCase().replace(/\s+/g, "");
   if (!code) return undefined;
   return events.find((event) => event.code === code);
+}
+
+export function publicStatusLabel(event: Pick<EventRecord, "status" | "demo">): string {
+  if (event.demo) return event.status === "upcoming" ? "PREVIEW" : "PREVIEW";
+  return event.status.toUpperCase();
 }

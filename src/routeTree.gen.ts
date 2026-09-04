@@ -34,6 +34,7 @@ import { Route as ApiPortalStorageHealthRouteImport } from './routes/api/portal.
 import { Route as ApiPortalUploadRouteImport } from './routes/api/portal.upload'
 import { Route as PortalEventsIdRouteImport } from './routes/portal.events.$id'
 import { Route as PortalEventsNewRouteImport } from './routes/portal.events.new'
+import { Route as PrintCodeCodeRouteImport } from './routes/print.code.$code'
 import { Route as PortalEventsIdEditRouteImport } from './routes/portal.events.$id.edit'
 
 const IndexRoute = IndexRouteImport.update({
@@ -161,6 +162,11 @@ const PortalEventsNewRoute = PortalEventsNewRouteImport.update({
   path: '/events/new',
   getParentRoute: () => PortalRoute,
 } as any)
+const PrintCodeCodeRoute = PrintCodeCodeRouteImport.update({
+  id: '/print/code/$code',
+  path: '/print/code/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PortalEventsIdEditRoute = PortalEventsIdEditRouteImport.update({
   id: '/edit',
   path: '/edit',
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/api/portal/upload': typeof ApiPortalUploadRoute
   '/portal/events/$id': typeof PortalEventsIdRouteWithChildren
   '/portal/events/new': typeof PortalEventsNewRoute
+  '/print/code/$code': typeof PrintCodeCodeRoute
   '/portal/events/$id/edit': typeof PortalEventsIdEditRoute
 }
 export interface FileRoutesByTo {
@@ -220,6 +227,7 @@ export interface FileRoutesByTo {
   '/api/portal/upload': typeof ApiPortalUploadRoute
   '/portal/events/$id': typeof PortalEventsIdRouteWithChildren
   '/portal/events/new': typeof PortalEventsNewRoute
+  '/print/code/$code': typeof PrintCodeCodeRoute
   '/portal/events/$id/edit': typeof PortalEventsIdEditRoute
 }
 export interface FileRoutesById {
@@ -249,6 +257,7 @@ export interface FileRoutesById {
   '/api/portal/upload': typeof ApiPortalUploadRoute
   '/portal/events/$id': typeof PortalEventsIdRouteWithChildren
   '/portal/events/new': typeof PortalEventsNewRoute
+  '/print/code/$code': typeof PrintCodeCodeRoute
   '/portal/events/$id/edit': typeof PortalEventsIdEditRoute
 }
 export interface FileRouteTypes {
@@ -279,6 +288,7 @@ export interface FileRouteTypes {
     | '/api/portal/upload'
     | '/portal/events/$id'
     | '/portal/events/new'
+    | '/print/code/$code'
     | '/portal/events/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/api/portal/upload'
     | '/portal/events/$id'
     | '/portal/events/new'
+    | '/print/code/$code'
     | '/portal/events/$id/edit'
   id:
     | '__root__'
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/api/portal/upload'
     | '/portal/events/$id'
     | '/portal/events/new'
+    | '/print/code/$code'
     | '/portal/events/$id/edit'
   fileRoutesById: FileRoutesById
 }
@@ -357,6 +369,7 @@ export interface RootRouteChildren {
   ApiPortalLoginHealthRoute: typeof ApiPortalLoginHealthRoute
   ApiPortalStorageHealthRoute: typeof ApiPortalStorageHealthRoute
   ApiPortalUploadRoute: typeof ApiPortalUploadRoute
+  PrintCodeCodeRoute: typeof PrintCodeCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -536,6 +549,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalEventsNewRouteImport
       parentRoute: typeof PortalRoute
     }
+    '/print/code/$code': {
+      id: '/print/code/$code'
+      path: '/print/code/$code'
+      fullPath: '/print/code/$code'
+      preLoaderRoute: typeof PrintCodeCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portal/events/$id/edit': {
       id: '/portal/events/$id/edit'
       path: '/edit'
@@ -599,7 +619,17 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPortalLoginHealthRoute: ApiPortalLoginHealthRoute,
   ApiPortalStorageHealthRoute: ApiPortalStorageHealthRoute,
   ApiPortalUploadRoute: ApiPortalUploadRoute,
+  PrintCodeCodeRoute: PrintCodeCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

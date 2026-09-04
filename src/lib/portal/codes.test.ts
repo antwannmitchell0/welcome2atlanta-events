@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   generateEventCode,
+  generateGuestCode,
+  isGuestEventCode,
   isValidEventCode,
   normalizeEventCode,
+  RESERVED_DEMO_CODES,
   safeDisplayFilename,
   slugify,
 } from "./codes.ts";
@@ -27,6 +30,22 @@ describe("event codes", () => {
     assert.match(a, /^ATL-/);
     assert.notEqual(a, b);
     assert.equal(isValidEventCode(a), true);
+  });
+
+  it("mints ATL-XXXX guest codes that miss reserved demo suffixes", () => {
+    const seq = [0.1, 0.2, 0.3, 0.4];
+    let i = 0;
+    const code = generateGuestCode(4, () => seq[i++ % seq.length]!);
+    assert.match(code, /^ATL-[A-Z0-9]{4}$/);
+    assert.equal(isGuestEventCode(code), true);
+    assert.equal(isValidEventCode(code), true);
+    for (const reserved of RESERVED_DEMO_CODES) {
+      assert.notEqual(code, reserved);
+    }
+    assert.equal(isGuestEventCode("ATL-404"), false);
+    assert.equal(isGuestEventCode("ATL-BELT"), true);
+    assert.equal(isGuestEventCode("ATL-INVEST"), true);
+    assert.equal(isGuestEventCode("ATL-WTAE"), true);
   });
 
   it("slugifies names", () => {

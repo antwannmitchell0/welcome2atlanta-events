@@ -3,20 +3,51 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, QrCode } from "lucide-react";
+import { parseCodeSearch, codeFromSearchString } from "@/lib/code-search";
 import { getEventByCode } from "@/lib/events";
+import { resolvePublicCode } from "@/lib/portal/public-galleries";
 
-export const Route = createFileRoute("/photos/qr")({ component: QrSearch });
+export const Route = createFileRoute("/photos/qr")({
+  validateSearch: parseCodeSearch,
+  loader: async ({ location }) => {
+    const code = codeFromSearchString(location.searchStr);
+    if (!code) return { resolved: null as Awaited<ReturnType<typeof resolvePublicCode>> };
+    return { resolved: await resolvePublicCode({ data: { code } }) };
+  },
+  component: QrSearch,
+});
 
 function QrSearch() {
-  const [code, setCode] = useState("");
+  const { code: incoming } = Route.useSearch();
+  const { resolved } = Route.useLoaderData();
+  const [code, setCode] = useState(incoming?.toUpperCase() ?? "");
   const [error, setError] = useState<string | null>(null);
-  const matched = getEventByCode(code);
+  const [matched, setMatched] = useState(resolved?.event ?? null);
+  const sample = getEventByCode(code);
+  const event = sample ?? matched;
+
+  async function open() {
+    const found = getEventByCode(code);
+    if (found) {
+      setMatched(found);
+      if (found.photoCount === 0) setError("That gallery isn’t live yet.");
+      return;
+    }
+    const hit = await resolvePublicCode({ data: { code } });
+    if (!hit) {
+      setError("No event matches that code.");
+      setMatched(null);
+      return;
+    }
+    setMatched(hit.event);
+    if (hit.event.photoCount === 0) setError("That gallery isn’t live yet.");
+  }
 
   return (
     <div className="min-h-screen bg-bg text-fg">
       <header className="border-b border-border">
         <div className="mx-auto flex h-16 max-w-md items-center justify-between px-5">
-          <Link to="/photos" className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
+          <Link to="/photos" search={incoming ? { code: incoming } : {}} className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
             <ArrowLeft className="size-4" />
             Back
           </Link>
@@ -37,33 +68,31 @@ function QrSearch() {
           onChange={(e) => {
             setCode(e.target.value.toUpperCase());
             setError(null);
+            setMatched(null);
           }}
           placeholder="ATL-404"
           className="mt-8 h-12 w-full rounded-xl border border-border bg-surface px-4 text-center text-lg tracking-widest text-fg placeholder:text-subtle outline-none focus:border-accent"
         />
-        {matched && matched.photoCount > 0 ? (
+        {event && event.photoCount > 0 && !event.slug.startsWith("code-") ? (
           <Link
             to="/events/$slug"
-            params={{ slug: matched.slug }}
+            params={{ slug: event.slug }}
             className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent font-semibold text-accent-fg"
           >
-            Open {matched.title}
+            Open {event.title}
             <ArrowRight className="size-4" />
           </Link>
         ) : (
           <button
             type="button"
             disabled={code.trim().length < 3}
-            onClick={() => {
-              const event = getEventByCode(code);
-              if (!event) setError("No event matches that code.");
-              else if (event.photoCount === 0) setError("That gallery isn’t live yet.");
-            }}
+            onClick={() => void open()}
             className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent font-semibold text-accent-fg disabled:opacity-40"
           >
             Open gallery
           </button>
         )}
+        {event ? <p className="mt-4 text-center text-sm text-accent">{event.title} · {event.code}</p> : null}
         {error ? <p className="mt-4 text-center text-sm text-live">{error}</p> : null}
         <p className="mt-6 text-center text-xs text-subtle">Try ATL-404 · ATL-BELT · ATL-O4W · ATL-INVEST · ATL-WTAE</p>
       </main>

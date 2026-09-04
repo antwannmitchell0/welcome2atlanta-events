@@ -1,9 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { listOwnerCoverageRequests } from "@/lib/portal/coverage-requests";
+import type { CoverageRequestRow } from "@/lib/portal/coverage-store";
 import { listOwnerEvents } from "@/lib/portal/events";
 import type { GalleryEventRow } from "@/lib/portal/event-input";
+import { getSku } from "@/lib/skus";
 
 export const Route = createFileRoute("/portal/")({
-  loader: () => listOwnerEvents(),
+  loader: async () => {
+    const [events, coverage] = await Promise.all([listOwnerEvents(), listOwnerCoverageRequests()]);
+    return { ...events, requests: coverage.requests };
+  },
   pendingComponent: () => <p className="text-muted">Loading Mission Control…</p>,
   errorComponent: ({ error }) => (
     <p className="text-live">{error.message === "Unauthorized" || error.message === "Forbidden" ? "Owner access required." : error.message}</p>
@@ -12,8 +18,13 @@ export const Route = createFileRoute("/portal/")({
 });
 
 function Dashboard() {
-  const data = Route.useLoaderData() as { events: GalleryEventRow[]; sampleCount: number };
+  const data = Route.useLoaderData() as {
+    events: GalleryEventRow[];
+    sampleCount: number;
+    requests: CoverageRequestRow[];
+  };
   const rows = data.events;
+  const requests = data.requests;
 
   return (
     <div className="space-y-8">
@@ -30,6 +41,21 @@ function Dashboard() {
         </Link>
       </div>
       <p className="text-sm text-subtle">{data.sampleCount} sample galleries stay on the public site.</p>
+
+      <section className="space-y-3">
+        <div className="flex items-end justify-between gap-3">
+          <h2 className="font-display text-2xl">Coverage requests</h2>
+          <p className="text-xs text-subtle">{requests.length} open book</p>
+        </div>
+        {requests.length === 0 ? (
+          <p className="rounded-xl border border-border bg-surface px-4 py-8 text-sm text-muted">
+            New organizer bookings land here with an ATL code.
+          </p>
+        ) : (
+          requests.map((request) => <RequestCard key={request.id} request={request} />)
+        )}
+      </section>
+
       {rows.length === 0 ? (
         <p className="rounded-xl border border-border bg-surface py-16 text-center text-muted">
           No database events yet. Create an event folder to start uploading.
@@ -42,6 +68,30 @@ function Dashboard() {
         </div>
       )}
     </div>
+  );
+}
+
+function RequestCard({ request }: { request: CoverageRequestRow }) {
+  const sku = getSku(request.sku);
+  return (
+    <article className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 md:flex-row md:items-center">
+      <div className="min-w-0 flex-1">
+        <p className="font-medium">{request.venue}</p>
+        <p className="text-sm text-muted">
+          {request.organizer_name} · {request.organizer_email} · {request.organizer_phone}
+        </p>
+        <p className="text-xs text-subtle">
+          {request.event_date} · {request.neighborhood} · {sku ? `${sku.name} ${sku.priceLabel}` : request.sku} · {request.event_code}
+        </p>
+      </div>
+      <Link
+        to="/print/code/$code"
+        params={{ code: request.event_code }}
+        className="inline-flex min-h-11 items-center rounded-full border border-border px-4 text-sm"
+      >
+        Print card
+      </Link>
+    </article>
   );
 }
 

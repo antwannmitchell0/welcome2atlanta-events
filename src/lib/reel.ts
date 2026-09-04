@@ -11,6 +11,15 @@ export const neighborhoods = [
   "Peachtree",
 ] as const;
 
+/** Existing site neighborhoods for organizer booking. Downtown already appears on demo events. */
+export const bookingNeighborhoods = [...neighborhoods, "Downtown"] as const;
+
+export type BookingNeighborhood = (typeof bookingNeighborhoods)[number];
+
+export function isBookingNeighborhood(value: string): value is BookingNeighborhood {
+  return (bookingNeighborhoods as readonly string[]).includes(value);
+}
+
 export const reelFrames = [
   { src: "/reel/skyline.jpg", place: "Downtown", caption: "The A after dark" },
   { src: "/reel/concert.jpg", place: "The venue", caption: "Hands up, lights down" },

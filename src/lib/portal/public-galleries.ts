@@ -4,6 +4,7 @@ import { getEvent, getEventByCode, sampleEvents, type EventRecord } from "../eve
 import type { GalleryEventRow } from "./event-input.ts";
 import { mediaUrl } from "./media-url.ts";
 import type { GalleryPhotoRow } from "./photo-store.ts";
+import { normalizeEventCode } from "./codes.ts";
 
 export type PublicGalleryPhoto = {
   id: string;
@@ -14,7 +15,7 @@ export type PublicGalleryPhoto = {
 };
 
 export type PublicGallery = {
-  kind: "sample" | "database";
+  kind: "sample" | "database" | "reserved";
   event: EventRecord;
   photos: PublicGalleryPhoto[];
 };
@@ -31,6 +32,7 @@ export function toPublicEventRecord(row: GalleryEventRow): EventRecord {
     photoCount: row.photo_count,
     image: row.cover_photo_id ? mediaUrl(row.cover_photo_id) : "/events/welcome-atl.jpg",
     code: row.event_code,
+    demo: false,
   };
 }
 
@@ -83,17 +85,55 @@ export const getPublicGallery = createServerFn({ method: "GET" })
 export const lookupPublicGalleryByCode = createServerFn({ method: "GET" })
   .validator(z.object({ code: z.string().min(1).max(24) }))
   .handler(async ({ data }): Promise<PublicGallery | null> => {
-    const sample = getEventByCode(data.code);
-    if (sample) return { kind: "sample", event: sample, photos: [] };
-    try {
-      const { getPublishedEventByCode } = await import("./event-store.ts");
-      const { listPublicEventPhotos } = await import("./photo-store.ts");
-      const sql = await loadSql();
-      const row = await getPublishedEventByCode(sql, data.code);
-      if (!row) return null;
-      const photos = toPublicPhotos(await listPublicEventPhotos(sql, row.id));
-      return { kind: "database", event: toPublicEventRecord({ ...row, photo_count: photos.length }), photos };
-    } catch {
-      return null;
-    }
+    return resolveCode(data.code);
   });
+
+export const resolvePublicCode = createServerFn({ method: "GET" })
+  .validator(z.object({ code: z.string().min(1).max(24) }))
+  .handler(async ({ data }): Promise<PublicGallery | null> => {
+    return resolveCode(data.code);
+  });
+
+async function resolveCode(raw: string): Promise<PublicGallery | null> {
+  const code = normalizeEventCode(raw);
+  const sample = getEventByCode(code);
+  if (sample) return { kind: "sample", event: sample, photos: [] };
+  try {
+    const sql = await loadSql();
+    const { getPublishedEventByCode, getOwnerEventByCode } = await import("./event-store.ts");
+    const { listPublicEventPhotos } = await import("./photo-store.ts");
+    const published = await getPublishedEventByCode(sql, code);
+    if (published) {
+      const photos = toPublicPhotos(await listPublicEventPhotos(sql, published.id));
+      return { kind: "database", event: toPublicEventRecord({ ...published, photo_count: photos.length }), photos };
+    }
+    const { getCoverageByCode } = await import("./coverage-store.ts");
+    const request = await getCoverageByCode(sql, code);
+    if (request) {
+      return {
+        kind: "reserved",
+        event: {
+          slug: `code-${request.event_code.toLowerCase()}`,
+          title: request.venue,
+          venue: request.venue,
+          neighborhood: request.neighborhood,
+          date: request.event_date,
+          status: "upcoming",
+          description: "Gallery opens after coverage. Keep this code — it is yours.",
+          photoCount: 0,
+          image: "/events/welcome-atl.jpg",
+          code: request.event_code,
+          demo: false,
+        },
+        photos: [],
+      };
+    }
+    const draft = await getOwnerEventByCode(sql, code);
+    if (draft) {
+      return { kind: "reserved", event: { ...toPublicEventRecord(draft), status: "upcoming", photoCount: 0 }, photos: [] };
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
