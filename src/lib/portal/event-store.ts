@@ -59,6 +59,12 @@ export async function allocateEventCode(
     ? await sql.query<{ event_code: string }>(`select event_code from gallery_event where id <> $1`, [exceptId])
     : await sql.query<{ event_code: string }>(`select event_code from gallery_event`);
   const taken = new Set(takenRows.map((row) => row.event_code));
+  try {
+    const booked = await sql.query<{ event_code: string }>(`select event_code from coverage_request`);
+    for (const row of booked) taken.add(row.event_code);
+  } catch {
+    // coverage_request lands in 0004; ignore if a stale schema is in play
+  }
 
   if (requested && requested.trim()) {
     const code = normalizeEventCode(requested);
@@ -199,6 +205,16 @@ export async function getPublishedEventByCode(sql: SqlLike, code: string): Promi
   if (!normalized) return null;
   const rows = await sql.query<Parameters<typeof mapEvent>[0]>(
     `${EVENT_SELECT} where e.event_code = $1 and e.status = 'published'`,
+    [normalized],
+  );
+  return rows[0] ? mapEvent(rows[0]) : null;
+}
+
+export async function getOwnerEventByCode(sql: SqlLike, code: string): Promise<GalleryEventRow | null> {
+  const normalized = normalizeEventCode(code);
+  if (!normalized) return null;
+  const rows = await sql.query<Parameters<typeof mapEvent>[0]>(
+    `${EVENT_SELECT} where e.event_code = $1`,
     [normalized],
   );
   return rows[0] ? mapEvent(rows[0]) : null;

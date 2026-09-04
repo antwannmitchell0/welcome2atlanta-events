@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { socialLinks } from "@/lib/site";
 
 export function SiteFooter() {
   return (
@@ -28,6 +29,13 @@ export function SiteFooter() {
             Privacy
           </Link>
         </nav>
+      </div>
+      <div className="mx-auto mt-6 flex max-w-6xl flex-wrap gap-5 px-5 text-sm text-muted">
+        {socialLinks.map((link) => (
+          <a key={link.id} href={link.href} className="hover:text-accent">
+            {link.label}
+          </a>
+        ))}
       </div>
       <p className="mx-auto mt-8 max-w-6xl px-5 text-xs text-subtle">
         © {new Date().getFullYear()} Welcome to Atlanta Events

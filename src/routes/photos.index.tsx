@@ -1,9 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Camera, QrCode, ScanFace, Search, Smartphone } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, QrCode, ScanFace, Search, Smartphone } from "lucide-react";
+import { parseCodeSearch, codeFromSearchString } from "@/lib/code-search";
+import { resolvePublicCode } from "@/lib/portal/public-galleries";
 
-export const Route = createFileRoute("/photos/")({ component: PhotosHub });
+export const Route = createFileRoute("/photos/")({
+  validateSearch: parseCodeSearch,
+  loader: async ({ location }) => {
+    const code = codeFromSearchString(location.searchStr);
+    if (!code) return { resolved: null as Awaited<ReturnType<typeof resolvePublicCode>> };
+    return { resolved: await resolvePublicCode({ data: { code } }) };
+  },
+  component: PhotosHub,
+});
 
 function PhotosHub() {
+  const { code } = Route.useSearch();
+  const { resolved } = Route.useLoaderData();
+  const event = resolved?.event;
+
   return (
     <div className="min-h-screen bg-bg text-fg">
       <header className="border-b border-border">
@@ -22,15 +36,41 @@ function PhotosHub() {
           <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-xl bg-surface">
             <Camera className="size-7 text-accent" />
           </div>
-          <h1 className="font-display text-4xl text-fg">Which event were you at?</h1>
+          <h1 className="font-display text-4xl text-fg">
+            {event ? event.title : "Which event were you at?"}
+          </h1>
           <p className="mt-3 text-muted">
-            Pick the night or enter the code from the room. No account needed.
+            {event
+              ? `${event.neighborhood} · ${event.code}`
+              : "Pick the night or enter the code from the room. No account needed."}
           </p>
         </div>
+
+        {event ? (
+          <div className="mt-8 rounded-xl border border-border bg-surface p-5">
+            <p className="text-xs tracking-[0.18em] text-accent">{event.code}</p>
+            <p className="mt-2 text-sm text-muted">
+              {event.photoCount > 0
+                ? "QR landed on the right room. Open the gallery or scan your face."
+                : "This code is reserved. Gallery goes live after coverage."}
+            </p>
+            {event.photoCount > 0 && !event.slug.startsWith("code-") ? (
+              <Link
+                to="/events/$slug"
+                params={{ slug: event.slug }}
+                className="mt-4 inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-accent-fg"
+              >
+                Open gallery
+                <ArrowRight className="size-4" />
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mt-10 grid gap-3">
           <Method
             to="/photos/event"
+            search={code ? { code } : {}}
             icon={<Search className="size-5" />}
             title="Event or code"
             description="Browse the public list, or type the code from the event"
@@ -38,12 +78,14 @@ function PhotosHub() {
           />
           <Method
             to="/photos/qr"
+            search={code ? { code } : {}}
             icon={<QrCode className="size-5" />}
             title="I have a code"
             description="Jump straight in with ATL-404, ATL-BELT, and the rest"
           />
           <Method
             to="/photos/face"
+            search={code ? { code } : {}}
             icon={<ScanFace className="size-5" />}
             title="Scan your face"
             description="Optional. On-device. Find yourself across live galleries"
@@ -72,16 +114,19 @@ function Method({
   title,
   description,
   primary,
+  search,
 }: {
   to: "/photos/event" | "/photos/phone" | "/photos/face" | "/photos/qr";
   icon: React.ReactNode;
   title: string;
   description: string;
   primary?: boolean;
+  search?: { code?: string };
 }) {
   return (
     <Link
       to={to}
+      search={search}
       className={
         primary
           ? "flex items-start gap-4 rounded-xl border border-accent/30 bg-surface p-5 hover:border-accent/50"

@@ -66,6 +66,37 @@
   }
 }
 
+.face-demo-frame {
+  opacity: 0;
+  animation: face-demo 8s linear infinite;
+}
+
+@keyframes face-demo {
+  0%,
+  11% {
+    opacity: 1;
+  }
+  12.5%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media print {
+  .print-actions {
+    display: none !important;
+  }
+
+  .print-sheet {
+    background: #0a0a0b !important;
+    color: #f3efe6 !important;
+  }
+
+  body {
+    background: #0a0a0b !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -76,5 +107,14 @@
 
   .reel-track {
     animation: none;
+  }
+
+  .face-demo-frame {
+    animation: none;
+    opacity: 0;
+  }
+
+  .face-demo-frame:first-child {
+    opacity: 1;
   }
 }

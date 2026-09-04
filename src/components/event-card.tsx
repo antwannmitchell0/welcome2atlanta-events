@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
-import type { EventRecord } from "@/lib/events";
+import { publicStatusLabel, type EventRecord } from "@/lib/events";
 
 export function EventCard({ event }: { event: EventRecord }) {
+  const label = publicStatusLabel(event);
+  const liveLook = label === "LIVE";
   return (
     <Link
       to="/events/$slug"
@@ -17,15 +19,13 @@ export function EventCard({ event }: { event: EventRecord }) {
         />
         <span
           className={
-            event.status === "live"
+            liveLook
               ? "absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-bg/80 px-2.5 py-1 text-[10px] font-medium tracking-wide text-live"
               : "absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-bg/80 px-2.5 py-1 text-[10px] font-medium tracking-wide text-accent"
           }
         >
-          {event.status === "live" ? (
-            <span className="size-1.5 rounded-full bg-live" />
-          ) : null}
-          {event.status.toUpperCase()}
+          {liveLook ? <span className="size-1.5 rounded-full bg-live" /> : null}
+          {label}
         </span>
       </div>
       <div className="p-5">

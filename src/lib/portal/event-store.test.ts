@@ -42,6 +42,7 @@ async function portalDb() {
   await pg.exec(readFileSync(join(root, "migrations/0001_auth.sql"), "utf8"));
   await pg.exec(readFileSync(join(root, "migrations/0002_owner_portal.sql"), "utf8"));
   await pg.exec(readFileSync(join(root, "migrations/0003_drop_storage_object.sql"), "utf8"));
+  await pg.exec(readFileSync(join(root, "migrations/0004_coverage_requests.sql"), "utf8"));
   return sqlFrom(pg);
 }
 

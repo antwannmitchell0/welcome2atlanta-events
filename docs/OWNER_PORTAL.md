@@ -60,4 +60,13 @@ Reset the owner password with `/portal/forgot-password` after `RESEND_API_KEY` i
 
 ## Sample galleries
 
-`src/lib/events.ts` remains the source for demo events and codes. Database events are additive and never replace those slugs or codes.
+`src/lib/events.ts` remains the source for demo events and codes. Database events are additive and never replace those slugs or codes. Demo rooms render as **PREVIEW**, never as LIVE.
+
+Public derivatives stay EXIF-stripped (`src/lib/portal/image-process.ts`). The `{Neighborhood} · WTAE` mark is overlaid on public delivery and downloads — it is not baked into the private Blob original.
+
+## Coverage requests (Loop 1)
+
+Public organizer booking at `/events` writes `coverage_request` (migration `0004_coverage_requests.sql`) and mints a unique `ATL-XXXX` code. Reserved demo codes stay blocked: ATL-404, ATL-BELT, ATL-O4W, ATL-INVEST, ATL-WTAE.
+
+New rows appear on `/portal` under Coverage requests. Print the door card at `/print/code/:code`. Guest photos stay free.
+

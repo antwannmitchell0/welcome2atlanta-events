@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Camera, RotateCcw, ScanFace, Shield, Upload } from "lucide-react";
+import { FaceDemoSlot } from "@/components/face-demo";
+import { ShareSheet } from "@/components/share-sheet";
+import { parseCodeSearch, codeFromSearchString } from "@/lib/code-search";
 import { events } from "@/lib/events";
+import { resolvePublicCode } from "@/lib/portal/public-galleries";
 import {
   captureFrame,
   descriptorFromImage,
@@ -14,11 +18,23 @@ import {
   type FaceMatch,
 } from "@/lib/face-engine";
 
-export const Route = createFileRoute("/photos/face")({ component: FaceSearch });
+export const Route = createFileRoute("/photos/face")({
+  validateSearch: parseCodeSearch,
+  loader: async ({ location }) => {
+    const code = codeFromSearchString(location.searchStr);
+    if (!code) return { resolved: null as Awaited<ReturnType<typeof resolvePublicCode>> };
+    return { resolved: await resolvePublicCode({ data: { code } }) };
+  },
+  component: FaceSearch,
+});
 
 type Phase = "ready" | "camera" | "searching" | "results";
 
 function FaceSearch() {
+  const { code } = Route.useSearch();
+  const { resolved } = Route.useLoaderData();
+  const hit = resolved?.event;
+  const scopedEvents = hit ? [hit, ...events.filter((event) => event.code !== hit.code)] : events;
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -128,7 +144,7 @@ function FaceSearch() {
   async function runSearch(source: HTMLImageElement | HTMLCanvasElement) {
     setPhase("searching");
     setHint("Matching your face across live galleries…");
-    setScanned(events.filter((event) => event.photoCount > 0).length);
+    setScanned(scopedEvents.filter((event) => event.photoCount > 0).length);
     try {
       const descriptor = await descriptorFromImage(source);
       if (!descriptor) {
@@ -136,7 +152,7 @@ function FaceSearch() {
         setPhase("ready");
         return;
       }
-      const found = await matchFace(descriptor, events);
+      const found = await matchFace(descriptor, scopedEvents);
       setMatches(found);
       setPhase("results");
       setHint(
@@ -185,7 +201,7 @@ function FaceSearch() {
     <div className="min-h-screen bg-bg text-fg">
       <header className="border-b border-border">
         <div className="mx-auto flex h-16 max-w-md items-center justify-between px-5">
-          <Link to="/photos" className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
+          <Link to="/photos" search={code ? { code } : {}} className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
             <ArrowLeft className="size-4" />
             Back
           </Link>
@@ -201,6 +217,11 @@ function FaceSearch() {
           </div>
           <h1 className="font-display text-3xl text-fg">Scan your face</h1>
           <p className="mt-3 text-muted">{hint}</p>
+          {resolved?.event ? (
+            <p className="mt-2 text-xs tracking-[0.16em] text-accent">
+              {resolved.event.code} · {resolved.event.neighborhood}
+            </p>
+          ) : null}
         </div>
 
         {phase === "camera" ? (
@@ -230,7 +251,9 @@ function FaceSearch() {
         {error ? <p className="mt-4 text-center text-sm text-live">{error}</p> : null}
 
         {phase === "ready" ? (
-          <aside className="mt-6 rounded-xl border border-border bg-surface p-4 text-left">
+          <>
+            <FaceDemoSlot />
+            <aside className="mt-6 rounded-xl border border-border bg-surface p-4 text-left">
             <div className="flex items-start gap-3">
               <Shield className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" />
               <div>
@@ -245,7 +268,8 @@ function FaceSearch() {
                 </Link>
               </div>
             </div>
-          </aside>
+            </aside>
+          </>
         ) : null}
 
         <div className="mt-6 space-y-3">
@@ -322,21 +346,31 @@ function FaceSearch() {
                 </Link>
               </div>
             ) : (
-              matches.map((match) => (
-                <Link
-                  key={`${match.eventSlug}-${match.image}`}
-                  to="/events/$slug"
-                  params={{ slug: match.eventSlug }}
-                  className="flex gap-3 overflow-hidden rounded-xl border border-border bg-surface hover:border-accent/40"
-                >
-                  <img src={match.image} alt="" className="h-24 w-20 object-cover" />
-                  <div className="flex flex-1 flex-col justify-center py-3 pr-4">
-                    <p className="text-xs text-accent">{match.score}% match</p>
-                    <p className="font-medium">{match.eventTitle}</p>
-                    <p className="text-sm text-muted">Open gallery</p>
-                  </div>
-                </Link>
-              ))
+              <>
+                {matches.map((match) => (
+                  <Link
+                    key={`${match.eventSlug}-${match.image}`}
+                    to="/events/$slug"
+                    params={{ slug: match.eventSlug }}
+                    className="flex gap-3 overflow-hidden rounded-xl border border-border bg-surface hover:border-accent/40"
+                  >
+                    <img src={match.image} alt="" className="h-24 w-20 object-cover" />
+                    <div className="flex flex-1 flex-col justify-center py-3 pr-4">
+                      <p className="text-xs text-accent">{match.score}% match</p>
+                      <p className="font-medium">{match.eventTitle}</p>
+                      <p className="text-sm text-muted">Open gallery</p>
+                    </div>
+                  </Link>
+                ))}
+                <ShareSheet
+                  neighborhood={resolved?.event.neighborhood ?? matches[0]?.eventTitle ?? "Atlanta"}
+                  code={resolved?.event.code ?? code ?? "ATL"}
+                  frames={matches.map((match, index) => ({
+                    id: `${match.eventSlug}-${index}`,
+                    src: match.image,
+                  }))}
+                />
+              </>
             )}
           </div>
         ) : null}

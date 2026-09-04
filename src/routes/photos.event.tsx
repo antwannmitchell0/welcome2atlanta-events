@@ -3,46 +3,59 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Search } from "lucide-react";
+import { ShareSheet } from "@/components/share-sheet";
+import { parseCodeSearch, codeFromSearchString } from "@/lib/code-search";
 import { events, getEventByCode, type EventRecord } from "@/lib/events";
-import { listPublicGalleries, lookupPublicGalleryByCode } from "@/lib/portal/public-galleries";
+import { listPublicGalleries, resolvePublicCode } from "@/lib/portal/public-galleries";
+import { reelFrames } from "@/lib/reel";
 
 export const Route = createFileRoute("/photos/event")({
-  loader: () => listPublicGalleries(),
+  validateSearch: parseCodeSearch,
+  loader: async ({ location }) => {
+    const catalog = await listPublicGalleries();
+    const code = codeFromSearchString(location.searchStr);
+    const resolved = code ? await resolvePublicCode({ data: { code } }) : null;
+    return { ...catalog, resolved };
+  },
   component: SearchByEvent,
 });
 
 function SearchByEvent() {
-  const { published } = Route.useLoaderData();
+  const { published, resolved } = Route.useLoaderData();
+  const { code: incoming } = Route.useSearch();
   const [query, setQuery] = useState("");
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(incoming?.toUpperCase() ?? "");
   const [codeError, setCodeError] = useState<string | null>(null);
-  const [matched, setMatched] = useState<EventRecord | null>(null);
+  const [matched, setMatched] = useState<EventRecord | null>(resolved?.event ?? null);
   const [looking, setLooking] = useState(false);
 
   const catalog = useMemo(() => [...events, ...published], [published]);
   const sampleMatch = getEventByCode(code);
-
-  const filtered = catalog.filter((event) => {
-    const hay = `${event.title} ${event.venue} ${event.neighborhood} ${event.code}`.toLowerCase();
-    return hay.includes(query.toLowerCase());
-  });
-
   const openTarget = sampleMatch ?? matched;
+  const shareFrames =
+    openTarget && openTarget.photoCount > 0
+      ? [openTarget.image, ...reelFrames.map((frame) => frame.src)]
+          .filter((src, i, arr) => arr.indexOf(src) === i)
+          .slice(0, 8)
+          .map((src, index) => ({ id: `${openTarget.code}-${index}`, src }))
+      : [];
 
   async function openCode() {
     setCodeError(null);
     const sample = getEventByCode(code);
     if (sample) {
+      setMatched(sample);
       if (sample.photoCount === 0) setCodeError("That gallery isn’t live yet.");
-      else setMatched(sample);
       return;
     }
     setLooking(true);
     try {
-      const found = await lookupPublicGalleryByCode({ data: { code } });
+      const found = await resolvePublicCode({ data: { code } });
       if (!found) setCodeError("No event matches that code.");
-      else if (found.event.photoCount === 0) setCodeError("That gallery isn’t live yet.");
-      else setMatched(found.event);
+      else {
+        setMatched(found.event);
+        if (found.event.photoCount === 0) setCodeError("That gallery isn’t live yet.");
+      }
     } catch {
       setCodeError("No event matches that code.");
     } finally {
@@ -54,7 +67,7 @@ function SearchByEvent() {
     <div className="min-h-screen bg-bg text-fg">
       <header className="border-b border-border">
         <div className="mx-auto flex h-16 max-w-2xl items-center justify-between px-5">
-          <Link to="/photos" className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
+          <Link to="/photos" search={incoming ? { code: incoming } : {}} className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
             <ArrowLeft className="size-4" />
             Back
           </Link>
@@ -81,7 +94,7 @@ function SearchByEvent() {
             placeholder="ATL-404"
             className="h-12 flex-1 rounded-xl border border-border bg-surface px-4 tracking-widest text-fg placeholder:text-subtle outline-none focus:border-accent"
           />
-          {openTarget && openTarget.photoCount > 0 ? (
+          {openTarget && openTarget.photoCount > 0 && !openTarget.slug.startsWith("code-") ? (
             <Link
               to="/events/$slug"
               params={{ slug: openTarget.slug }}
@@ -101,13 +114,17 @@ function SearchByEvent() {
             </button>
           )}
         </div>
-        {openTarget && openTarget.photoCount > 0 ? (
+        {openTarget ? (
           <p className="mt-2 text-sm text-accent">
-            {openTarget.title} · {openTarget.neighborhood}
+            {openTarget.title} · {openTarget.neighborhood} · {openTarget.code}
           </p>
         ) : null}
         {codeError ? <p className="mt-2 text-sm text-live">{codeError}</p> : null}
         <p className="mt-2 text-xs text-subtle">Try ATL-404, ATL-BELT, ATL-O4W, ATL-INVEST, or ATL-WTAE.</p>
+
+        {openTarget && shareFrames.length > 0 ? (
+          <ShareSheet neighborhood={openTarget.neighborhood} code={openTarget.code} frames={shareFrames} />
+        ) : null}
 
         <div className="relative mt-10">
           <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-subtle" />
@@ -119,28 +136,28 @@ function SearchByEvent() {
           />
         </div>
         <div className="mt-6 space-y-3">
-          {filtered.map((event) => (
-            <Link
-              key={event.slug}
-              to="/events/$slug"
-              params={{ slug: event.slug }}
-              className="group flex items-center justify-between rounded-xl border border-border bg-surface p-5 hover:border-accent/40"
-            >
-              <div>
-                <h2 className="font-medium text-fg">{event.title}</h2>
-                <p className="mt-1 text-sm text-muted">
-                  {event.neighborhood} · {event.date}
-                  {event.photoCount > 0 ? ` · ${event.code}` : ""}
-                </p>
-              </div>
-              <ArrowRight className="size-5 text-accent opacity-0 group-hover:opacity-100" />
-            </Link>
-          ))}
-          {filtered.length === 0 ? (
-            <p className="rounded-xl border border-border bg-surface py-10 text-center text-muted">
-              No events match that search.
-            </p>
-          ) : null}
+          {catalog
+            .filter((event) => {
+              const hay = `${event.title} ${event.venue} ${event.neighborhood} ${event.code}`.toLowerCase();
+              return hay.includes(query.toLowerCase());
+            })
+            .map((event) => (
+              <Link
+                key={event.slug}
+                to="/events/$slug"
+                params={{ slug: event.slug }}
+                className="group flex items-center justify-between rounded-xl border border-border bg-surface p-5 hover:border-accent/40"
+              >
+                <div>
+                  <h2 className="font-medium text-fg">{event.title}</h2>
+                  <p className="mt-1 text-sm text-muted">
+                    {event.neighborhood} · {event.date}
+                    {event.photoCount > 0 ? ` · ${event.code}` : ""}
+                  </p>
+                </div>
+                <ArrowRight className="size-5 text-accent opacity-0 group-hover:opacity-100" />
+              </Link>
+            ))}
         </div>
       </main>
     </div>

@@ -6,10 +6,13 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { events } from "@/lib/events";
 import { neighborhoods } from "@/lib/reel";
+import { GUEST_PHOTOS_LINE, organizerSkus } from "@/lib/skus";
+import { socialLinks } from "@/lib/site";
 
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
+  const fromPrice = organizerSkus[0]?.priceLabel ?? "$450";
   return (
     <div className="min-h-screen bg-bg text-fg">
       <SiteHeader />
@@ -64,13 +67,13 @@ function Home() {
             to="/photos"
             kicker="GUESTS"
             title="Find your photos"
-            body="Event or code first. Face scan if you want it."
+            body="Event or code first. Face scan if you want it. Guest photos stay free."
           />
           <Door
             to="/events"
             kicker="ORGANIZERS"
-            title="Bring WTAE"
-            body="Tell us the date. We cover the room and deliver the gallery."
+            title={`Bring WTAE · from ${fromPrice}`}
+            body={`ROOM $450 · NIGHT $900 · BLOCK $2400 / 4 dates. ${GUEST_PHOTOS_LINE}`}
           />
           <Door
             to="/creators"
@@ -86,7 +89,8 @@ function Home() {
           <div className="mb-8 flex items-end justify-between gap-4">
             <div>
               <p className="text-xs tracking-[0.2em] text-accent">IN THE CITY</p>
-              <h2 className="mt-1 font-display text-3xl text-fg">What’s live in Atlanta</h2>
+              <h2 className="mt-1 font-display text-3xl text-fg">What’s in the reel</h2>
+              <p className="mt-2 text-sm text-muted">Preview rooms from the archive. Live nights land with a code.</p>
             </div>
             <Link to="/explore" className="hidden text-sm text-accent md:inline">
               All neighborhoods →
@@ -107,6 +111,13 @@ function Home() {
           <span className="text-accent">never stops being photographed.</span>
         </h2>
         <p className="mt-4 text-muted">404 energy. Your night. Your gallery.</p>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-5 text-sm text-muted">
+          {socialLinks.map((link) => (
+            <a key={link.id} href={link.href} className="hover:text-accent">
+              {link.label}
+            </a>
+          ))}
+        </div>
         <Link
           to="/photos"
           className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-accent px-8 text-sm font-semibold text-accent-fg"
